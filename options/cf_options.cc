@@ -223,10 +223,13 @@ static std::unordered_map<std::string, OptionTypeInfo>
         {"filter_deletes",
          {0, OptionType::kBoolean, OptionVerificationType::kDeprecated,
           OptionTypeFlags::kMutable}},
+<<<<<<< HEAD
         {"check_flush_compaction_key_order",
          {offsetof(struct MutableCFOptions, check_flush_compaction_key_order),
           OptionType::kBoolean, OptionVerificationType::kNormal,
           OptionTypeFlags::kMutable}},
+=======
+>>>>>>> 7d472accd... Bring the Configurable options together (#5753)
         {"paranoid_file_checks",
          {offsetof(struct MutableCFOptions, paranoid_file_checks),
           OptionType::kBoolean, OptionVerificationType::kNormal,

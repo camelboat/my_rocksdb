@@ -620,9 +620,12 @@ ifdef ASSERT_STATUS_CHECKED
 		merger_test \
 		mock_env_test \
 		object_registry_test \
+<<<<<<< HEAD
 		prefix_test \
 		plain_table_db_test \
 		repair_test \
+=======
+>>>>>>> 7d472accd... Bring the Configurable options together (#5753)
 		configurable_test \
 		options_settable_test \
 		options_test \

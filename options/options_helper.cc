@@ -727,6 +727,7 @@ Status GetColumnFamilyOptionsFromMap(
   *new_options = base_options;
 
   const auto config = CFOptionsAsConfigurable(base_options);
+<<<<<<< HEAD
   Status s = ConfigureFromMap<ColumnFamilyOptions>(
       config_options, opts_map, OptionsHelper::kCFOptionsName, config.get(),
       new_options);
@@ -736,6 +737,11 @@ Status GetColumnFamilyOptionsFromMap(
   } else {
     return Status::InvalidArgument(s.getState());
   }
+=======
+  return ConfigureFromMap<ColumnFamilyOptions>(config_options, opts_map,
+                                               OptionsHelper::kCFOptionsName,
+                                               config.get(), new_options);
+>>>>>>> 7d472accd... Bring the Configurable options together (#5753)
 }
 
 Status GetColumnFamilyOptionsFromString(
@@ -782,6 +788,7 @@ Status GetDBOptionsFromMap(
   assert(new_options);
   *new_options = base_options;
   auto config = DBOptionsAsConfigurable(base_options);
+<<<<<<< HEAD
   Status s = ConfigureFromMap<DBOptions>(config_options, opts_map,
                                          OptionsHelper::kDBOptionsName,
                                          config.get(), new_options);
@@ -791,6 +798,11 @@ Status GetDBOptionsFromMap(
   } else {
     return Status::InvalidArgument(s.getState());
   }
+=======
+  return ConfigureFromMap<DBOptions>(config_options, opts_map,
+                                     OptionsHelper::kDBOptionsName,
+                                     config.get(), new_options);
+>>>>>>> 7d472accd... Bring the Configurable options together (#5753)
 }
 
 Status GetDBOptionsFromString(const DBOptions& base_options,
@@ -855,6 +867,7 @@ Status GetOptionsFromString(const ConfigOptions& config_options,
     } else {
       *new_options = Options(*new_db_options, base_options);
     }
+<<<<<<< HEAD
   }
   // Translate any errors (NotFound, NotSupported, to InvalidArgument
   if (s.ok() || s.IsInvalidArgument()) {
@@ -862,6 +875,10 @@ Status GetOptionsFromString(const ConfigOptions& config_options,
   } else {
     return Status::InvalidArgument(s.getState());
   }
+=======
+  }
+  return s;
+>>>>>>> 7d472accd... Bring the Configurable options together (#5753)
 }
 
 std::unordered_map<std::string, EncodingType>

@@ -37,10 +37,16 @@ class DBOptionsTest : public DBTestBase {
     ConfigOptions config_options;
     config_options.delimiter = "; ";
 
+<<<<<<< HEAD
     EXPECT_OK(GetStringFromMutableDBOptions(
         config_options, MutableDBOptions(options), &options_str));
     EXPECT_OK(StringToMap(options_str, &mutable_map));
 
+=======
+    GetStringFromMutableDBOptions(config_options, MutableDBOptions(options),
+                                  &options_str);
+    StringToMap(options_str, &mutable_map);
+>>>>>>> 7d472accd... Bring the Configurable options together (#5753)
     return mutable_map;
   }
 
@@ -51,9 +57,15 @@ class DBOptionsTest : public DBTestBase {
     config_options.delimiter = "; ";
 
     std::unordered_map<std::string, std::string> mutable_map;
+<<<<<<< HEAD
     EXPECT_OK(GetStringFromMutableCFOptions(
         config_options, MutableCFOptions(options), &options_str));
     EXPECT_OK(StringToMap(options_str, &mutable_map));
+=======
+    GetStringFromMutableCFOptions(config_options, MutableCFOptions(options),
+                                  &options_str);
+    StringToMap(options_str, &mutable_map);
+>>>>>>> 7d472accd... Bring the Configurable options together (#5753)
     return mutable_map;
   }
 

@@ -111,6 +111,25 @@ class ConfigurableTest : public testing::Test {
   ConfigOptions config_options_;
 };
 
+<<<<<<< HEAD
+=======
+class ConfigurableParamTest
+    : public ConfigurableTest,
+      virtual public ::testing::WithParamInterface<
+          std::pair<std::string, ConfigTestFactoryFunc>> {
+ public:
+  ConfigurableParamTest() {
+    configuration_ = GetParam().first;
+    factory_ = GetParam().second;
+    object_.reset(factory_());
+  }
+  void TestConfigureOptions(const ConfigOptions& opts);
+  ConfigTestFactoryFunc factory_;
+  std::string configuration_;
+  std::unique_ptr<Configurable> object_;
+};
+
+>>>>>>> 7d472accd... Bring the Configurable options together (#5753)
 TEST_F(ConfigurableTest, GetOptionsPtrTest) {
   std::string opt_str;
   std::unique_ptr<Configurable> configurable(SimpleConfigurable::Create());
@@ -582,6 +601,7 @@ TEST_F(ConfigurableTest, TestNoCompare) {
 }
 #endif
 
+<<<<<<< HEAD
 static std::unordered_map<std::string, ConfigTestFactoryFunc> TestFactories = {
     {"Simple", []() { return SimpleConfigurable::Create("simple"); }},
     {"Struct", []() { return SimpleStructFactory(); }},
@@ -669,14 +689,21 @@ class ConfigurableParamTest : public ConfigurableTest,
   std::unique_ptr<Configurable> object_;
 };
 
+=======
+>>>>>>> 7d472accd... Bring the Configurable options together (#5753)
 void ConfigurableParamTest::TestConfigureOptions(
     const ConfigOptions& config_options) {
   std::unique_ptr<Configurable> base, copy;
   std::unordered_set<std::string> names;
   std::string opt_str, mismatch;
 
+<<<<<<< HEAD
   base.reset(CreateConfigurable());
   copy.reset(CreateConfigurable());
+=======
+  base.reset(factory_());
+  copy.reset(factory_());
+>>>>>>> 7d472accd... Bring the Configurable options together (#5753)
 
   ASSERT_OK(base->ConfigureFromString(config_options, configuration_));
   ASSERT_OK(base->GetOptionString(config_options, &opt_str));
@@ -684,7 +711,11 @@ void ConfigurableParamTest::TestConfigureOptions(
   ASSERT_OK(copy->GetOptionString(config_options, &opt_str));
   ASSERT_TRUE(base->AreEquivalent(config_options, copy.get(), &mismatch));
 
+<<<<<<< HEAD
   copy.reset(CreateConfigurable());
+=======
+  copy.reset(factory_());
+>>>>>>> 7d472accd... Bring the Configurable options together (#5753)
   ASSERT_OK(base->GetOptionNames(config_options, &names));
   std::unordered_map<std::string, std::string> unused;
   bool found_one = false;
@@ -726,7 +757,11 @@ TEST_P(ConfigurableParamTest, GetDefaultOptionsTest) {
 TEST_P(ConfigurableParamTest, ConfigureFromPropsTest) {
   std::string opt_str, mismatch;
   std::unordered_set<std::string> names;
+<<<<<<< HEAD
   std::unique_ptr<Configurable> copy(CreateConfigurable());
+=======
+  std::unique_ptr<Configurable> copy(factory_());
+>>>>>>> 7d472accd... Bring the Configurable options together (#5753)
 
   ASSERT_OK(object_->ConfigureFromString(config_options_, configuration_));
   config_options_.delimiter = "\n";
@@ -745,6 +780,7 @@ TEST_P(ConfigurableParamTest, ConfigureFromPropsTest) {
   ASSERT_TRUE(object_->AreEquivalent(config_options_, copy.get(), &mismatch));
 }
 
+<<<<<<< HEAD
 INSTANTIATE_TEST_CASE_P(
     ParamTest, ConfigurableParamTest,
     testing::Values(
@@ -782,6 +818,112 @@ INSTANTIATE_TEST_CASE_P(
         std::pair<std::string, std::string>("BlockBased",
                                             "block_size=1024;"
                                             "no_block_cache=true;")));
+=======
+static Configurable* SimpleFactory() {
+  return SimpleConfigurable::Create("simple");
+}
+
+static Configurable* UniqueFactory() {
+  return SimpleConfigurable::Create(
+      "simple", TestConfigMode::kSimpleMode | TestConfigMode::kUniqueMode);
+}
+static Configurable* SharedFactory() {
+  return SimpleConfigurable::Create(
+      "simple", TestConfigMode::kSimpleMode | TestConfigMode::kSharedMode);
+}
+
+static Configurable* NestedFactory() {
+  return SimpleConfigurable::Create(
+      "simple", TestConfigMode::kSimpleMode | TestConfigMode::kNestedMode);
+}
+
+static Configurable* MutableFactory() {
+  return SimpleConfigurable::Create("simple", TestConfigMode::kMutableMode |
+                                                  TestConfigMode::kSimpleMode |
+                                                  TestConfigMode::kNestedMode);
+}
+
+static Configurable* ThreeWrappedFactory() {
+  std::shared_ptr<Configurable> child;
+  child.reset(
+      SimpleConfigurable::Create("child", TestConfigMode::kDefaultMode));
+  std::shared_ptr<Configurable> parent;
+  parent.reset(
+      new WrappedConfigurable("parent", TestConfigMode::kDefaultMode, child));
+  return new WrappedConfigurable("master", TestConfigMode::kDefaultMode,
+                                 parent);
+}
+
+static Configurable* ThreeDeepFactory() {
+  Configurable* simple = SimpleConfigurable::Create(
+      "Simple", TestConfigMode::kUniqueMode | TestConfigMode::kDefaultMode);
+  auto* unique =
+      simple->GetOptions<std::unique_ptr<Configurable>>("SimpleUnique");
+  unique->reset(SimpleConfigurable::Create(
+      "Child", TestConfigMode::kUniqueMode | TestConfigMode::kDefaultMode));
+  unique =
+      unique->get()->GetOptions<std::unique_ptr<Configurable>>("ChildUnique");
+  unique->reset(
+      SimpleConfigurable::Create("Child", TestConfigMode::kDefaultMode));
+  return simple;
+}
+
+static Configurable* DBOptionsFactory() {
+  auto config = DBOptionsAsConfigurable(DBOptions());
+  return config.release();
+}
+
+static Configurable* CFOptionsFactory() {
+  auto config = CFOptionsAsConfigurable(ColumnFamilyOptions());
+  return config.release();
+}
+
+static Configurable* BlockBasedFactory() { return NewBlockBasedTableFactory(); }
+
+INSTANTIATE_TEST_CASE_P(
+    ParamTest, ConfigurableParamTest,
+    testing::Values(
+        std::pair<std::string, ConfigTestFactoryFunc>(
+            "int=42;bool=true;string=s", SimpleFactory),
+        std::pair<std::string, ConfigTestFactoryFunc>(
+            "int=42;unique={int=33;string=unique}", MutableFactory),
+        std::pair<std::string, ConfigTestFactoryFunc>(
+            "struct={int=33;bool=true;string=s;}", SimpleStructFactory),
+        std::pair<std::string, ConfigTestFactoryFunc>(
+            "int=33;bool=true;string=outer;"
+            "shared={int=42;string=shared}",
+            SharedFactory),
+        std::pair<std::string, ConfigTestFactoryFunc>(
+            "int=33;bool=true;string=outer;"
+            "unique={int=42;string=unique}",
+            UniqueFactory),
+        std::pair<std::string, ConfigTestFactoryFunc>(
+            "int=11;bool=true;string=outer;"
+            "pointer={int=22;string=pointer};"
+            "unique={int=33;string=unique};"
+            "shared={int=44;string=shared}",
+            NestedFactory),
+        std::pair<std::string, ConfigTestFactoryFunc>(
+            "int=11;bool=true;string=outer;"
+            "inner={int=22;string=parent;"
+            "inner={int=33;string=child}};",
+            ThreeWrappedFactory),
+        std::pair<std::string, ConfigTestFactoryFunc>(
+            "int=11;bool=true;string=outer;"
+            "unique={int=22;string=inner;"
+            "unique={int=33;string=unique}};",
+            ThreeDeepFactory),
+        std::pair<std::string, ConfigTestFactoryFunc>("max_background_jobs=100;"
+                                                      "max_open_files=200;",
+                                                      DBOptionsFactory),
+        std::pair<std::string, ConfigTestFactoryFunc>(
+            "table_factory=BlockBasedTable;"
+            "disable_auto_compactions=true;",
+            CFOptionsFactory),
+        std::pair<std::string, ConfigTestFactoryFunc>("block_size=1024;"
+                                                      "no_block_cache=true;",
+                                                      BlockBasedFactory)));
+>>>>>>> 7d472accd... Bring the Configurable options together (#5753)
 #endif  // ROCKSDB_LITE
 
 }  // namespace test

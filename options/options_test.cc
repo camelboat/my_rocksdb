@@ -1177,6 +1177,7 @@ TEST_F(OptionsTest, GetOptionsFromStringTest) {
   base_options.dump_malloc_stats = false;
   base_options.write_buffer_size = 1024;
   Options bad_options = new_options;
+<<<<<<< HEAD
   Status s = GetOptionsFromString(config_options, base_options,
                                   "create_if_missing=XX;dump_malloc_stats=true",
                                   &bad_options);
@@ -1191,15 +1192,33 @@ TEST_F(OptionsTest, GetOptionsFromStringTest) {
   ASSERT_NOK(s);
   ASSERT_TRUE(s.IsInvalidArgument());
 
+=======
+  ASSERT_NOK(GetOptionsFromString(config_options, base_options,
+                                  "create_if_missing=XX;dump_malloc_stats=true",
+                                  &bad_options));
+  ASSERT_EQ(bad_options.dump_malloc_stats, false);
+
+  bad_options = new_options;
+  ASSERT_NOK(GetOptionsFromString(config_options, base_options,
+                                  "write_buffer_size=XX;dump_malloc_stats=true",
+                                  &bad_options));
+>>>>>>> 7d472accd... Bring the Configurable options together (#5753)
   ASSERT_EQ(bad_options.dump_malloc_stats, false);
 
   // Test a bad value for a TableFactory Option returns a failure
   bad_options = new_options;
+<<<<<<< HEAD
   s = GetOptionsFromString(config_options, base_options,
                            "write_buffer_size=16;dump_malloc_stats=true"
                            "block_based_table_factory={block_size=XX;};",
                            &bad_options);
   ASSERT_TRUE(s.IsInvalidArgument());
+=======
+  ASSERT_NOK(GetOptionsFromString(config_options, base_options,
+                                  "write_buffer_size=16;dump_malloc_stats=true"
+                                  "block_based_table_factory={block_size=XX;};",
+                                  &bad_options));
+>>>>>>> 7d472accd... Bring the Configurable options together (#5753)
   ASSERT_EQ(bad_options.dump_malloc_stats, false);
   ASSERT_EQ(bad_options.write_buffer_size, 1024);
 
@@ -3409,6 +3428,7 @@ TEST_F(OptionTypeInfoTest, TestInvalidArgs) {
 
   ASSERT_NOK(OptionTypeInfo(0, OptionType::kBoolean)
                  .Parse(config_options, "b", "x", &b));
+<<<<<<< HEAD
   ASSERT_NOK(
       OptionTypeInfo(0, OptionType::kInt).Parse(config_options, "b", "x", &i));
   ASSERT_NOK(OptionTypeInfo(0, OptionType::kInt32T)
@@ -3416,6 +3436,15 @@ TEST_F(OptionTypeInfoTest, TestInvalidArgs) {
   ASSERT_NOK(OptionTypeInfo(0, OptionType::kInt64T)
                  .Parse(config_options, "b", "x", &i64));
   ASSERT_NOK(
+=======
+  ASSERT_NOK(
+      OptionTypeInfo(0, OptionType::kInt).Parse(config_options, "b", "x", &i));
+  ASSERT_NOK(OptionTypeInfo(0, OptionType::kInt32T)
+                 .Parse(config_options, "b", "x", &i32));
+  ASSERT_NOK(OptionTypeInfo(0, OptionType::kInt64T)
+                 .Parse(config_options, "b", "x", &i64));
+  ASSERT_NOK(
+>>>>>>> 7d472accd... Bring the Configurable options together (#5753)
       OptionTypeInfo(0, OptionType::kUInt).Parse(config_options, "b", "x", &u));
   ASSERT_NOK(OptionTypeInfo(0, OptionType::kUInt32T)
                  .Parse(config_options, "b", "x", &u32));

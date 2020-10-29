@@ -37,10 +37,16 @@ Status TableFactory::CreateFromString(const ConfigOptions& config_options_in,
     factory->reset(new CuckooTableFactory());
 #endif  // ROCKSDB_LITE
   } else {
+<<<<<<< HEAD
     status = Status::NotSupported("Could not load table factory: ", name);
     return status;
   }
   if (status.ok() && !existing_opts.empty()) {
+=======
+    return Status::NotSupported("Could not load table factory: ", name);
+  }
+  if (!existing_opts.empty()) {
+>>>>>>> 7d472accd... Bring the Configurable options together (#5753)
     config_options.invoke_prepare_options = false;
     status = factory->get()->ConfigureFromString(config_options, existing_opts);
   }

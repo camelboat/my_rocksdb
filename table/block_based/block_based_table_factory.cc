@@ -197,6 +197,7 @@ static std::unordered_map<std::string,
         {"kShortenSeparatorsAndSuccessor",
          BlockBasedTableOptions::IndexShorteningMode::
              kShortenSeparatorsAndSuccessor}};
+#endif  // ROCKSDB_LITE
 
 static std::unordered_map<std::string, OptionTypeInfo>
     metadata_cache_options_type_info = {
@@ -374,11 +375,14 @@ static std::unordered_map<std::string, OptionTypeInfo>
                    pin_top_level_index_and_filter),
           OptionType::kBoolean, OptionVerificationType::kNormal,
           OptionTypeFlags::kNone}},
+<<<<<<< HEAD
         {kOptNameMetadataCacheOpts,
          OptionTypeInfo::Struct(
              kOptNameMetadataCacheOpts, &metadata_cache_options_type_info,
              offsetof(struct BlockBasedTableOptions, metadata_cache_options),
              OptionVerificationType::kNormal, OptionTypeFlags::kNone)},
+=======
+>>>>>>> 7d472accd... Bring the Configurable options together (#5753)
         {"block_cache",
          {offsetof(struct BlockBasedTableOptions, block_cache),
           OptionType::kUnknown, OptionVerificationType::kNormal,
