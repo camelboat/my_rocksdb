@@ -1509,6 +1509,7 @@ Status CompactionJob::InstallCompactionResults(
   // Add compaction inputs
   compaction->AddInputDeletions(compact_->compaction->edit());
 
+  std::cout << "calling install compaction results " << std::endl;
   // RUBBLE: write compaction metadata file
   std::string filepath = "/mnt/sdb/archive_dbs/compaction_meta/"+std::to_string(job_id_);
   std::string comp_metadata_str = "";
@@ -1516,7 +1517,11 @@ Status CompactionJob::InstallCompactionResults(
   int start_level = compact_->compaction->start_level();
   comp_metadata_str += "start-level: " + std::to_string(start_level) + "\n";
 
-  for (unsigned int i=0; i<compact_->compaction->num_input_levels(); i++){
+  unsigned int num_input_levels = compact_->compaction->num_input_levels();
+  assert(num_input_levels == 2);
+  
+  comp_metadata_str += "num of input level : " + std::to_string(num_input_levels) + "\n";
+  for (unsigned int i=0; i<num_input_levels; i++){
     // comp_metadata_str += "level-"+std::to_string(compact_->compaction->start_level() + i);
     comp_metadata_str += "level-"+std::to_string(compact_->compaction->level(i));
     for (auto f : *(compact_->compaction->inputs(i))){
@@ -1524,6 +1529,8 @@ Status CompactionJob::InstallCompactionResults(
     }
     comp_metadata_str += "\n";
   }
+
+  comp_metadata_str += "output level : " + std::to_string(compact_->compaction->output_level()) + "\n";
   comp_metadata_str += "level-"+std::to_string(compact_->compaction->output_level());
   
 
