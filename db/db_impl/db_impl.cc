@@ -869,7 +869,7 @@ Status DBImpl::GetStatsHistory(
 
 void DBImpl::DumpStats() {
   TEST_SYNC_POINT("DBImpl::DumpStats:1");
-  PrintStatistics();
+//  PrintStatistics();
 #ifndef ROCKSDB_LITE
   const DBPropertyInfo* cf_property_info =
       GetPropertyInfo(DB::Properties::kCFStats);
@@ -887,16 +887,25 @@ void DBImpl::DumpStats() {
     InstrumentedMutexLock l(&mutex_);
     default_cf_internal_stats_->GetStringProperty(
         *db_property_info, DB::Properties::kDBStats, &stats);
+    default_cf_internal_stats_->GetStringProperty(*db_property_info, DB::Properties::kLevelStats, &stats);
+    ROCKS_LOG_INFO(immutable_db_options_.info_log, "Load kCFStatsNoFileHistogram");
     for (auto cfd : *versions_->GetColumnFamilySet()) {
       if (cfd->initialized()) {
         cfd->internal_stats()->GetStringProperty(
             *cf_property_info, DB::Properties::kCFStatsNoFileHistogram, &stats);
       }
     }
+    ROCKS_LOG_INFO(immutable_db_options_.info_log, "Load kCFFileHistogram");
     for (auto cfd : *versions_->GetColumnFamilySet()) {
       if (cfd->initialized()) {
         cfd->internal_stats()->GetStringProperty(
             *cf_property_info, DB::Properties::kCFFileHistogram, &stats);
+      }
+    }
+      ROCKS_LOG_INFO(immutable_db_options_.info_log, "Load kCFStats");
+    for (auto cfd : *versions_->GetColumnFamilySet()) {
+      if (cfd->initialized()) {
+        cfd->internal_stats()->GetStringProperty(*cf_property_info, DB::Properties::kCFStats, &stats);
       }
     }
   }
@@ -1580,8 +1589,14 @@ class GetWithTimestampReadCallback : public ReadCallback {
 };
 }  // namespace
 
+std::atomic<uint64_t> num_get_called = {0};
+
 Status DBImpl::GetImpl(const ReadOptions& read_options, const Slice& key,
                        GetImplOptions& get_impl_options) {
+// changxu: hack to call DumpStats() manually
+  if (num_get_called%100000 == 0) {
+      DBImpl::DumpStats();
+  }
   assert(get_impl_options.value != nullptr ||
          get_impl_options.merge_operands != nullptr);
 
