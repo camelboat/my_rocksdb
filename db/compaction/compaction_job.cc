@@ -1512,7 +1512,7 @@ Status CompactionJob::InstallCompactionResults(
   // RUBBLE: write compaction metadata file
   std::string filepath = "/mnt/sdb/archive_dbs/compaction_meta/"+std::to_string(job_id_);
   std::string comp_metadata_str = "";
-  for (int i=0; i<compact_->compaction->num_input_levels(); i++){
+  for (unsigned int i=0; i<compact_->compaction->num_input_levels(); i++){
     comp_metadata_str += "level-"+std::to_string(compact_->compaction->start_level());
     for (auto f : *(compact_->compaction->inputs(i))){
       comp_metadata_str += " "+std::to_string(f->fd.GetNumber());
