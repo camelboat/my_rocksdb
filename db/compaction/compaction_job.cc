@@ -1513,10 +1513,6 @@ Status CompactionJob::InstallCompactionResults(
   // RUBBLE: write compaction metadata file
   std::string filepath = "/mnt/sdb/archive_dbs/compaction_meta/"+std::to_string(job_id_);
   std::string comp_metadata_str = "";
-<<<<<<< HEAD
-  for (unsigned int i=0; i<compact_->compaction->num_input_levels(); i++){
-    comp_metadata_str += "level-"+std::to_string(compact_->compaction->start_level());
-=======
 
   int start_level = compact_->compaction->start_level();
   comp_metadata_str += "start-level: " + std::to_string(start_level) + "\n";
@@ -1528,7 +1524,6 @@ Status CompactionJob::InstallCompactionResults(
   for (unsigned int i=0; i<num_input_levels; i++){
     // comp_metadata_str += "level-"+std::to_string(compact_->compaction->start_level() + i);
     comp_metadata_str += "level-"+std::to_string(compact_->compaction->level(i));
->>>>>>> 163aa9cf124c5ad1a2a5e26494195a377fcb4462
     for (auto f : *(compact_->compaction->inputs(i))){
       comp_metadata_str += " "+std::to_string(f->fd.GetNumber());
     }
@@ -1557,6 +1552,7 @@ Status CompactionJob::InstallCompactionResults(
                                 mutable_cf_options, compaction->edit(),
                                 db_mutex_, db_directory_);
 }
+
 
 void CompactionJob::RecordCompactionIOStats() {
   RecordTick(stats_, COMPACT_READ_BYTES, IOSTATS(bytes_read));

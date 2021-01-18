@@ -22,7 +22,6 @@ MACHINE ?= $(shell uname -m)
 ARFLAGS = ${EXTRA_ARFLAGS} rs
 STRIPFLAGS = -S -x
 JAVA_HOME = "/usr/lib/jvm/default-java"
-JAVA_HOME = "/usr/lib/jvm/default-java"
 
 # Transform parallel LOG output into something more readable.
 perl_command = perl -n \
