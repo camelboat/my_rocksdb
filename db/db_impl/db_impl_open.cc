@@ -1325,6 +1325,7 @@ Status DBImpl::WriteLevel0TableForRecovery(int job_id, ColumnFamilyData* cfd,
   Arena arena;
   Status s;
   TableProperties table_properties;
+
   {
     ScopedArenaIterator iter(mem->NewIterator(ro, &arena));
     ROCKS_LOG_DEBUG(immutable_db_options_.info_log,
@@ -1464,9 +1465,13 @@ Status DB::Open(const DBOptions& db_options, const std::string& dbname,
   const bool kBatchPerTxn = true;
   // ASH: changes to add db_paths
   DBOptions temp_db_options = db_options;
-  temp_db_options.db_paths.push_back(rocksdb::DbPath("/mnt/sdb/sst_dir/sst_10", 10000000000));
+  temp_db_options.statistics = CreateDBStatistics();
+  temp_db_options.stats_dump_period_sec = 60;
+  temp_db_options.db_paths.emplace_back(rocksdb::DbPath("/mnt/sdb/archive_dbs/sst_dir/sst_last_run", 10000000000));
+  
   return DBImpl::Open(temp_db_options, dbname, column_families, handles, dbptr,
                       !kSeqPerBatch, kBatchPerTxn);
+//  return DBImpl::Open(db_options, dbname, column_families, handles, dbptr, !kSeqPerBatch, kBatchPerTxn);
 }
 
 IOStatus DBImpl::CreateWAL(uint64_t log_file_num, uint64_t recycle_log_number,
