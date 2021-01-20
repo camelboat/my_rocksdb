@@ -1164,10 +1164,14 @@ Status DBImpl::CompactFilesImpl(
 
   compaction_job.Prepare();
 
+  printf(" ------------ calling compact files --------------\n");
+
   mutex_.Unlock();
   TEST_SYNC_POINT("CompactFilesImpl:0");
   TEST_SYNC_POINT("CompactFilesImpl:1");
+
   compaction_job.Run();
+  
   TEST_SYNC_POINT("CompactFilesImpl:2");
   TEST_SYNC_POINT("CompactFilesImpl:3");
   mutex_.Lock();
@@ -2609,6 +2613,10 @@ void DBImpl::BackgroundCallCompaction(PrepickedCompaction* prepicked_compaction,
   }
 }
 
+
+std::atomic<uint64_t> deletion_compaction_counter{0};
+std::atomic<uint64_t> trival_move_compaction_counter{0};
+
 Status DBImpl::BackgroundCompaction(bool* made_progress,
                                     JobContext* job_context,
                                     LogBuffer* log_buffer,
@@ -2810,6 +2818,10 @@ Status DBImpl::BackgroundCompaction(bool* made_progress,
     // Nothing to do
     ROCKS_LOG_BUFFER(log_buffer, "Compaction nothing to do");
   } else if (c->deletion_compaction()) {
+
+    //looks like deletion compaction never happens in normal execution
+    fprintf(stderr, " ------------ calling deletion_compaction %lu th times ---------------- \n", deletion_compaction_counter.load(std::memory_order_relaxed));
+    deletion_compaction_counter++;
     // TODO(icanadi) Do we want to honor snapshots here? i.e. not delete old
     // file if there is alive snapshot pointing to it
     TEST_SYNC_POINT_CALLBACK("DBImpl::BackgroundCompaction:BeforeCompaction",
@@ -2841,6 +2853,10 @@ Status DBImpl::BackgroundCompaction(bool* made_progress,
     TEST_SYNC_POINT_CALLBACK("DBImpl::BackgroundCompaction:AfterCompaction",
                              c->column_family_data());
   } else if (!trivial_move_disallowed && c->IsTrivialMove()) {
+
+    fprintf(stderr, "calling trival move compaction %lu th times \n", trival_move_compaction_counter.load(std::memory_order_relaxed));
+    trival_move_compaction_counter++;
+
     TEST_SYNC_POINT("DBImpl::BackgroundCompaction:TrivialMove");
     TEST_SYNC_POINT_CALLBACK("DBImpl::BackgroundCompaction:BeforeCompaction",
                              c->column_family_data());

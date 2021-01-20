@@ -1480,6 +1480,7 @@ Status CompactionJob::FinishCompactionOutputFile(
   return s;
 }
 
+std::atomic<uint64_t> install_compaction_result_counter{0};
 Status CompactionJob::InstallCompactionResults(
     const MutableCFOptions& mutable_cf_options) {
   db_mutex_->AssertHeld();
@@ -1508,8 +1509,10 @@ Status CompactionJob::InstallCompactionResults(
 
   // Add compaction inputs
   compaction->AddInputDeletions(compact_->compaction->edit());
+  
+  fprintf(stderr, "calling install compaction results %lu th times\n", install_compaction_result_counter.load(std::memory_order_relaxed));
+  install_compaction_result_counter++;
 
-  std::cout << "calling install compaction results " << std::endl;
   // RUBBLE: write compaction metadata file
   std::string filepath = "/mnt/sdb/archive_dbs/compaction_meta/"+std::to_string(job_id_);
   std::string comp_metadata_str = "";

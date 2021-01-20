@@ -383,6 +383,7 @@ void MemTableList::RollbackMemtableFlush(const autovector<MemTable*>& mems,
   imm_flush_needed.store(true, std::memory_order_release);
 }
 
+std::atomic<uint64_t> try_install_memtable_flush_result_counter{0};
 // Try record a successful flush in the manifest file. It might just return
 // Status::OK letting a concurrent flush to do actual the recording..
 Status MemTableList::TryInstallMemtableFlushResults(
@@ -396,6 +397,7 @@ Status MemTableList::TryInstallMemtableFlushResults(
   AutoThreadOperationStageUpdater stage_updater(
       ThreadStatus::STAGE_MEMTABLE_INSTALL_FLUSH_RESULTS);
   mu->AssertHeld();
+  
 
   // Flush was successful
   // Record the status on the memtable object. Either this call or a call by a
@@ -480,6 +482,9 @@ Status MemTableList::TryInstallMemtableFlushResults(
         edit_list.back()->SetMinLogNumberToKeep(PrecomputeMinLogNumberToKeep(
             vset, *cfd, edit_list, memtables_to_flush, prep_tracker));
       }
+
+  fprintf(stderr, "calling TryInstallMemtableFlushResults %lu th times\n", try_install_memtable_flush_result_counter.load(std::memory_order_relaxed));
+  try_install_memtable_flush_result_counter++;
 
       // this can release and reacquire the mutex.
       s = vset->LogAndApply(cfd, mutable_cf_options, edit_list, mu,
@@ -675,6 +680,7 @@ uint64_t MemTableList::PrecomputeMinLogContainingPrepSection(
   return min_log;
 }
 
+std::atomic<uint64_t> install_memtable_atomic_flush_result{0};
 // Commit a successful atomic flush in the manifest file.
 Status InstallMemtableAtomicFlushResults(
     const autovector<MemTableList*>* imm_lists,
@@ -730,6 +736,9 @@ Status InstallMemtableAtomicFlushResults(
     }
     assert(0 == num_entries);
   }
+
+  fprintf(stderr, "calling install memtable atomic flush result %lu th times\n", install_memtable_atomic_flush_result.load(std::memory_order_relaxed));
+  install_memtable_atomic_flush_result++;
 
   // this can release and reacquire the mutex.
   s = vset->LogAndApply(cfds, mutable_cf_options_list, edit_lists, mu,
