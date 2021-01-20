@@ -61,6 +61,9 @@
 #include "util/string_util.h"
 #include "util/user_comparator_wrapper.h"
 
+#include<iostream>
+#include<fstream>
+
 namespace ROCKSDB_NAMESPACE {
 
 namespace {
@@ -3834,6 +3837,8 @@ void VersionSet::AppendVersion(ColumnFamilyData* column_family_data,
   v->next_->prev_ = v;
 }
 
+std::atomic<uint64_t> manifest_write_counter{0};
+
 Status VersionSet::ProcessManifestWrites(
     std::deque<ManifestWriter>& writers, InstrumentedMutex* mu,
     FSDirectory* db_directory, bool new_descriptor_log,
@@ -4105,6 +4110,11 @@ Status VersionSet::ProcessManifestWrites(
 #ifndef NDEBUG
       size_t idx = 0;
 #endif
+
+       std::string filepath = "/mnt/sdb/archive_dbs/manifest_meta/"+std::to_string(manifest_write_counter.load(std::memory_order_relaxed));
+       std::ofstream metafile;
+       metafile.open(filepath);
+
       for (auto& e : batch_edits) {
         std::string record;
         if (!e->EncodeTo(&record)) {
@@ -4112,6 +4122,9 @@ Status VersionSet::ProcessManifestWrites(
                                  e->DebugString(true));
           break;
         }
+        
+        metafile << record + "\n";
+
         TEST_KILL_RANDOM("VersionSet::LogAndApply:BeforeAddRecord",
                          rocksdb_kill_odds * REDUCE_ODDS2);
 #ifndef NDEBUG
@@ -4130,6 +4143,10 @@ Status VersionSet::ProcessManifestWrites(
           break;
         }
       }
+      // probably should close after error is checked
+      metafile.close();
+      manifest_write_counter++;
+
       if (s.ok()) {
         io_s = SyncManifest(env_, db_options_, descriptor_log_->file());
         TEST_SYNC_POINT_CALLBACK(
@@ -4307,6 +4324,7 @@ Status VersionSet::ProcessManifestWrites(
   return s;
 }
 
+std::atomic<uint64_t> log_and_apply_counter{0};
 // 'datas' is gramatically incorrect. We still use this notation to indicate
 // that this variable represents a collection of column_family_data.
 Status VersionSet::LogAndApply(
@@ -4316,6 +4334,15 @@ Status VersionSet::LogAndApply(
     InstrumentedMutex* mu, FSDirectory* db_directory, bool new_descriptor_log,
     const ColumnFamilyOptions* new_cf_options) {
   mu->AssertHeld();
+
+  // logAndApply directly is called inside three functions during normal execution:
+  // 1) BackgroundCompaction inside db_impl_compaction_flush.cc , sepecifically when there is a trivial move compaction
+  // 2) InstallCompactionResults inside compaction_job.cc, usually called when a normal compaction finishs
+  // 3) TryInstallMemtableFlushResults inside memtable_list.cc, which tries to record a successful flush in the manifest file.
+
+  fprintf(stderr, "calling log and apply %lu th times\n", log_and_apply_counter.load(std::memory_order_relaxed));
+  log_and_apply_counter++;
+
   int num_edits = 0;
   for (const auto& elist : edit_lists) {
     num_edits += static_cast<int>(elist.size());
