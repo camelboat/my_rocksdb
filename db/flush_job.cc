@@ -191,6 +191,7 @@ void FlushJob::PickMemTable() {
   base_->Ref();  // it is likely that we do not need this reference
 }
 
+std::atomic<uint64_t> flush_job_counter{0};
 Status FlushJob::Run(LogsWithPrepTracker* prep_tracker,
                      FileMetaData* file_meta) {
   TEST_SYNC_POINT("FlushJob::Start");
@@ -223,6 +224,7 @@ Status FlushJob::Run(LogsWithPrepTracker* prep_tracker,
     prev_cpu_read_nanos = IOSTATS(cpu_read_nanos);
   }
 
+  flush_job_counter++;
   // This will release and re-acquire the mutex.
   Status s = WriteLevel0Table();
 
@@ -300,6 +302,10 @@ void FlushJob::Cancel() {
   assert(base_ != nullptr);
   base_->Unref();
 }
+
+
+std::string remote_sst_dir = "/mnt/nvme0n1p4/sst_dir/sst_last_run/";
+std::atomic<uint64_t> write_L0_Table_counter{0};
 
 Status FlushJob::WriteLevel0Table() {
   AutoThreadOperationStageUpdater stage_updater(
@@ -457,12 +463,24 @@ Status FlushJob::WriteLevel0Table() {
     edit_->SetBlobFileAdditions(std::move(blob_file_additions));
 
     // RUBBLE: write compaction metadata file
-     std::string filepath = "/mnt/sdb/archive_dbs/compation_meta/"+std::to_string(job_context_->job_id);
-     std::string comp_metadata_str = "w 0 "+std::to_string(meta_.fd.GetNumber());
-     std::ofstream metafile;
-     metafile.open(filepath);
-     metafile << comp_metadata_str+"\n";
-     metafile.close();
+    IOStatus ios;
+    std::string fname = TableFileName(cfd_->ioptions()->cf_paths,
+                      meta_.fd.GetNumber(), meta_.fd.GetPathId());
+    
+    write_L0_Table_counter++;
+    fprintf(stdout,"file name : %lu \n " , meta_.fd.GetNumber());
+
+    std::string sst_number = std::to_string(meta_.fd.GetNumber());
+    std::string sst_file_name = std::string("000000").replace(6 - sst_number.length(), sst_number.length(), sst_number) + ".sst";
+
+    ios = CopyFile(db_options_.fs.get(), fname, remote_sst_dir + sst_file_name, 0,  true);
+
+    if (!ios.ok()){
+      fprintf(stderr, " file copy failed: %lu\n", meta_.fd.GetNumber());
+    }else {
+      fprintf(stdout, "file copy success: %lu \n", meta_.fd.GetNumber());
+    }
+
   }
 #ifndef ROCKSDB_LITE
   // Piggyback FlushJobInfo on the first first flushed memtable.
