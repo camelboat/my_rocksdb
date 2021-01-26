@@ -1513,36 +1513,60 @@ Status CompactionJob::InstallCompactionResults(
   fprintf(stderr, "calling install compaction results %lu th times\n", install_compaction_result_counter.load(std::memory_order_relaxed));
   install_compaction_result_counter++;
 
-  // RUBBLE: write compaction metadata file
-  std::string filepath = "/mnt/sdb/archive_dbs/compaction_meta/"+std::to_string(job_id_);
-  std::string comp_metadata_str = "";
-
   unsigned int num_input_levels = compact_->compaction->num_input_levels();
   
+  IOStatus ios;
+
   for (unsigned int i=0; i<num_input_levels; i++){
-    comp_metadata_str += "d "+std::to_string(compact_->compaction->level(i));
     for (auto f : *(compact_->compaction->inputs(i))){
-      comp_metadata_str += " "+std::to_string(f->fd.GetNumber());
+      
+      std::string fname = TableFileName(compact_->compaction->immutable_cf_options()->cf_paths,
+                      f->fd.GetNumber(), f->fd.GetPathId());
+
+      // std::cout << fname << std::endl;
+
+      ios = fs_->FileExists(fname, IOOptions(), nullptr);
+      if (ios.ok()){
+        ios = fs_->DeleteFile(fname, IOOptions(), nullptr);
+        
+        if(ios.IsIOError()){
+          fprintf(stderr, "delete file failed: %lu\n", f->fd.GetNumber());
+        }else if(ios.ok()){
+          fprintf(stdout, "delete file success: %lu\n", f->fd.GetNumber());
+        }
+      }else {
+        if (ios.IsNotFound()){
+          fprintf(stderr, "file : %lu does not exist \n", f->fd.GetNumber());
+        }
+      }
     }
-    comp_metadata_str += "\n";
   }
 
-  comp_metadata_str += "w "+std::to_string(compact_->compaction->output_level());
-  
+
+  std::string remote_sst_dir = "/mnt/nvme0n1p4/sst_dir/sst_last_run/";
 
   for (const auto& sub_compact : compact_->sub_compact_states) {
     for (const auto& out : sub_compact.outputs) {
       compaction->edit()->AddFile(compaction->output_level(), out.meta);
       // RUBBLE: append output compaction files
-      comp_metadata_str += " "+std::to_string(out.meta.fd.GetNumber());
+      std::string fname = TableFileName(sub_compact.compaction->immutable_cf_options()->cf_paths,
+                      out.meta.fd.GetNumber(), out.meta.fd.GetPathId());
+      
+      // std::cerr << fname << std::endl;
+
+      std::string sst_number = std::to_string(out.meta.fd.GetNumber());
+      std::string sst_file_name = std::string("000000").replace(6 - sst_number.length(), sst_number.length(), sst_number) + ".sst";
+
+      ios = CopyFile(fs_.get(), fname, remote_sst_dir + sst_file_name, 0,  true);
+
+      if (!ios.ok()){
+        fprintf(stderr, " file copy failed: %lu\n", out.meta.fd.GetNumber());
+      }else {
+        fprintf(stdout, "file copy success: %lu \n", out.meta.fd.GetNumber());
+      }
     }
   }
 
-  // RUBBLE: write the file
-  std::ofstream metafile;
-  metafile.open(filepath);
-  metafile << comp_metadata_str+"\n";
-  metafile.close();
 
   return versions_->LogAndApply(compaction->column_family_data(),
                                 mutable_cf_options, compaction->edit(),
