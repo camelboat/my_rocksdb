@@ -4111,7 +4111,8 @@ Status VersionSet::ProcessManifestWrites(
       size_t idx = 0;
 #endif
 
-       std::string filepath = "/mnt/sdb/archive_dbs/manifest_meta/"+std::to_string(manifest_write_counter.load(std::memory_order_relaxed));
+      // also send those manifest records to the secondary
+       std::string filepath = "/mnt/nvme0n1p4/manifest_meta/"+std::to_string(manifest_write_counter.load(std::memory_order_relaxed));
        std::ofstream metafile;
        metafile.open(filepath);
 
