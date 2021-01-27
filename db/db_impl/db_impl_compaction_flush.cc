@@ -2106,6 +2106,18 @@ void DBImpl::MaybeScheduleFlushOrCompaction() {
   auto bg_job_limits = GetBGJobLimits();
   bool is_flush_pool_empty =
       env_->GetBackgroundThreads(Env::Priority::HIGH) == 0;
+  
+  //RUBBLE:
+  // there are two ways to implement the secondary:
+  // 1) flush still runs on secondary, but compaction is disabled, then whenever a compaction happens 
+  //    on the primary, we sync with the secondary;
+  // 2) flush and compaction are all disabled on secondary, and primary sends sst whenever a compaction 
+  //    or a flush happens
+
+  // right now, we're using the seconda approach, so should disable flush here
+  // setting unscheduled_flushes_ to 0 should do the trick.
+  unscheduled_flushes_ = 0;
+
   while (!is_flush_pool_empty && unscheduled_flushes_ > 0 &&
          bg_flush_scheduled_ < bg_job_limits.max_flushes) {
     bg_flush_scheduled_++;

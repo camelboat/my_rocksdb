@@ -576,9 +576,12 @@ void MemTableList::Add(MemTable* m, autovector<MemTable*>* to_delete) {
   current_->Add(m, to_delete);
   m->MarkImmutable();
 
-  // HACKING: DISCARD immutable memtable
-  current_->Remove(m, to_delete);
-  return;
+  //RUBBLE:
+  // Probably shouldn't discard imm here, sicne to keep the secondary consistent with primary
+  // we should discard the immutable memtable when the primary successfully flushed this table.
+
+  // current_->Remove(m, to_delete);
+  // return;
 
   num_flush_not_started_++;
   if (num_flush_not_started_ == 1) {
