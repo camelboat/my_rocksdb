@@ -1,0 +1,37 @@
+
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "io.grpc.rubble.keyvaluestore";
+option java_outer_classname = "keyvaluestoreProto";
+option objc_class_prefix = "HLW";
+
+package keyvaluestore;
+
+// The key-value store service.
+service KeyValueStore {
+  rpc Put (stream PutRequest) returns (stream PutReply) {}
+  rpc Get (stream GetRequest) returns (stream GetReply) {}
+}
+
+// The Get request containing a key.
+message GetRequest {
+  string key = 1;
+}
+
+// The Get response containing the status and returned value for the key if key exists
+message GetReply {
+  bool    ok = 1;
+  string  value = 2;
+}
+
+// The Put request containing a key-value pair.
+message PutRequest {
+  string key = 1;
+  string value = 2;
+}
+
+// The Put reply containing the reply status indicating whether the put succeeds
+message PutReply {
+    bool ok = 1;
+}
