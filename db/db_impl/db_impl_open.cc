@@ -1693,7 +1693,7 @@ Status DBImpl::Open(const DBOptions& db_options, const std::string& dbname,
         s = Status::InvalidArgument(
             "The memtable of column family %s does not support merge operator "
             "its options.merge_operator is non-null",
-            cfd->GetName().c_str());
+            cfd->GetName().c_str());  
       }
       if (!s.ok()) {
         break;

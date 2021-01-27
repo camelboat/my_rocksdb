@@ -483,8 +483,8 @@ Status MemTableList::TryInstallMemtableFlushResults(
             vset, *cfd, edit_list, memtables_to_flush, prep_tracker));
       }
 
-  fprintf(stderr, "calling TryInstallMemtableFlushResults %lu th times\n", try_install_memtable_flush_result_counter.load(std::memory_order_relaxed));
-  try_install_memtable_flush_result_counter++;
+      // fprintf(stderr, "calling TryInstallMemtableFlushResults %lu th times\n", try_install_memtable_flush_result_counter.load(std::memory_order_relaxed));
+      try_install_memtable_flush_result_counter++;
 
       // this can release and reacquire the mutex.
       s = vset->LogAndApply(cfd, mutable_cf_options, edit_list, mu,
@@ -578,6 +578,7 @@ void MemTableList::Add(MemTable* m, autovector<MemTable*>* to_delete) {
   // and when moving to the imutable list we don't unref it,
   // we don't have to ref the memtable here. we just take over the
   // reference from the DBImpl.
+  
   current_->Add(m, to_delete);
   m->MarkImmutable();
 
@@ -737,6 +738,7 @@ Status InstallMemtableAtomicFlushResults(
     assert(0 == num_entries);
   }
 
+ // looks like this never gets called during normal execution
   fprintf(stderr, "calling install memtable atomic flush result %lu th times\n", install_memtable_atomic_flush_result.load(std::memory_order_relaxed));
   install_memtable_atomic_flush_result++;
 

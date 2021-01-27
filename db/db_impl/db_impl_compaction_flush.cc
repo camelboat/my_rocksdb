@@ -2854,7 +2854,7 @@ Status DBImpl::BackgroundCompaction(bool* made_progress,
                              c->column_family_data());
   } else if (!trivial_move_disallowed && c->IsTrivialMove()) {
 
-    fprintf(stderr, "calling trival move compaction %lu th times \n", trival_move_compaction_counter.load(std::memory_order_relaxed));
+    // fprintf(stderr, "calling trival move compaction %lu th times \n", trival_move_compaction_counter.load(std::memory_order_relaxed));
     trival_move_compaction_counter++;
 
     TEST_SYNC_POINT("DBImpl::BackgroundCompaction:TrivialMove");

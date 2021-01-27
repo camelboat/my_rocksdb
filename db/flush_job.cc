@@ -304,7 +304,7 @@ void FlushJob::Cancel() {
 }
 
 
-std::string remote_sst_dir = "/mnt/nvme0n1p4/sst_dir/sst_last_run/";
+// std::string remote_sst_dir = "/mnt/nvme0n1p4/sst_dir/sst_last_run/";
 std::atomic<uint64_t> write_L0_Table_counter{0};
 
 Status FlushJob::WriteLevel0Table() {
@@ -468,17 +468,19 @@ Status FlushJob::WriteLevel0Table() {
                       meta_.fd.GetNumber(), meta_.fd.GetPathId());
     
     write_L0_Table_counter++;
-    fprintf(stdout,"file name : %lu \n " , meta_.fd.GetNumber());
+
+    // fprintf(stdout,"file name : %lu \n " , meta_.fd.GetNumber());
 
     std::string sst_number = std::to_string(meta_.fd.GetNumber());
     std::string sst_file_name = std::string("000000").replace(6 - sst_number.length(), sst_number.length(), sst_number) + ".sst";
 
-    ios = CopyFile(db_options_.fs.get(), fname, remote_sst_dir + sst_file_name, 0,  true);
+    
+    ios = CopyFile(db_options_.fs.get(), fname, "/mnt/nvme0n1p4/sst_dir/sst_last_run/" + sst_file_name, 0,  true);
 
     if (!ios.ok()){
       fprintf(stderr, " file copy failed: %lu\n", meta_.fd.GetNumber());
     }else {
-      fprintf(stdout, "file copy success: %lu \n", meta_.fd.GetNumber());
+      // fprintf(stdout, "file copy success: %lu \n", meta_.fd.GetNumber());
     }
 
   }

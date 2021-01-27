@@ -4336,12 +4336,12 @@ Status VersionSet::LogAndApply(
     const ColumnFamilyOptions* new_cf_options) {
   mu->AssertHeld();
 
-  // logAndApply directly is called inside three functions during normal execution:
+  // logAndApply is directly called inside three functions during normal execution:
   // 1) BackgroundCompaction inside db_impl_compaction_flush.cc , sepecifically when there is a trivial move compaction
-  // 2) InstallCompactionResults inside compaction_job.cc, usually called when a normal compaction finishs
+  // 2) InstallCompactionResults inside compaction_job.cc, usually called when a normal compaction finishes
   // 3) TryInstallMemtableFlushResults inside memtable_list.cc, which tries to record a successful flush in the manifest file.
 
-  fprintf(stderr, "calling log and apply %lu th times\n", log_and_apply_counter.load(std::memory_order_relaxed));
+  // fprintf(stderr, "calling log and apply %lu th times\n", log_and_apply_counter.load(std::memory_order_relaxed));
   log_and_apply_counter++;
 
   int num_edits = 0;

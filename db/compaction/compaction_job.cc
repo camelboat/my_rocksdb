@@ -1481,6 +1481,8 @@ Status CompactionJob::FinishCompactionOutputFile(
 }
 
 std::atomic<uint64_t> install_compaction_result_counter{0};
+std::string remote_sst_dir = "/mnt/nvme0n1p4/sst_dir/sst_last_run/";
+
 Status CompactionJob::InstallCompactionResults(
     const MutableCFOptions& mutable_cf_options) {
   db_mutex_->AssertHeld();
@@ -1510,7 +1512,7 @@ Status CompactionJob::InstallCompactionResults(
   // Add compaction inputs
   compaction->AddInputDeletions(compact_->compaction->edit());
   
-  fprintf(stderr, "calling install compaction results %lu th times\n", install_compaction_result_counter.load(std::memory_order_relaxed));
+  // fprintf(stderr, "calling install compaction results %lu th times\n", install_compaction_result_counter.load(std::memory_order_relaxed));
   install_compaction_result_counter++;
 
   unsigned int num_input_levels = compact_->compaction->num_input_levels();
@@ -1519,20 +1521,19 @@ Status CompactionJob::InstallCompactionResults(
 
   for (unsigned int i=0; i<num_input_levels; i++){
     for (auto f : *(compact_->compaction->inputs(i))){
-      
+      //Rubble: for those sst files that gets deleted in the compaction, also delete the remote ones
       std::string fname = TableFileName(compact_->compaction->immutable_cf_options()->cf_paths,
                       f->fd.GetNumber(), f->fd.GetPathId());
 
-      // std::cout << fname << std::endl;
-
       ios = fs_->FileExists(fname, IOOptions(), nullptr);
+      // this check is probably unnecessary, cause versions_->VerifyCompactionFileConsistency(compaction) already does the check
       if (ios.ok()){
         ios = fs_->DeleteFile(fname, IOOptions(), nullptr);
         
         if(ios.IsIOError()){
           fprintf(stderr, "delete file failed: %lu\n", f->fd.GetNumber());
         }else if(ios.ok()){
-          fprintf(stdout, "delete file success: %lu\n", f->fd.GetNumber());
+          // fprintf(stdout, "delete file success: %lu\n", f->fd.GetNumber());
         }
       }else {
         if (ios.IsNotFound()){
@@ -1542,31 +1543,35 @@ Status CompactionJob::InstallCompactionResults(
     }
   }
 
-
-  std::string remote_sst_dir = "/mnt/nvme0n1p4/sst_dir/sst_last_run/";
-
   for (const auto& sub_compact : compact_->sub_compact_states) {
     for (const auto& out : sub_compact.outputs) {
       compaction->edit()->AddFile(compaction->output_level(), out.meta);
-      // RUBBLE: append output compaction files
+      // RUBBLE: copy the output sst files to remote sst directory
       std::string fname = TableFileName(sub_compact.compaction->immutable_cf_options()->cf_paths,
                       out.meta.fd.GetNumber(), out.meta.fd.GetPathId());
       
-      // std::cerr << fname << std::endl;
-
       std::string sst_number = std::to_string(out.meta.fd.GetNumber());
       std::string sst_file_name = std::string("000000").replace(6 - sst_number.length(), sst_number.length(), sst_number) + ".sst";
 
       ios = CopyFile(fs_.get(), fname, remote_sst_dir + sst_file_name, 0,  true);
 
       if (!ios.ok()){
-        fprintf(stderr, " file copy failed: %lu\n", out.meta.fd.GetNumber());
+        fprintf(stderr, "file copy failed: %lu\n", out.meta.fd.GetNumber());
       }else {
-        fprintf(stdout, "file copy success: %lu \n", out.meta.fd.GetNumber());
+        // fprintf(stdout, "file copy success: %lu \n", out.meta.fd.GetNumber());
       }
     }
   }
 
+  // RUBBLE:
+  // ummm.... Probably could implement the applying manifest records to the secondary logic as a rpc call
+  // something like this: ok = call(rpc.srv, "rocksdb.readAndApply", args, reply)
+
+  /**
+   * args will be the versionEdits
+   * reply indicating the status of the call
+   * 
+   **/
 
   return versions_->LogAndApply(compaction->column_family_data(),
                                 mutable_cf_options, compaction->edit(),
