@@ -1,7 +1,16 @@
-1. before compile, make sure the grpc install dir is exported to the PATH
-2. To compile, run: 
+before compile, make sure the grpc install dir is exported to the PATH.
 
-`mkdir -p cmake/build`
-`cd cmake/build`
-`cmake ../..`
-`make -j`
+for example, I set `MY_INSTALL_DIR` to `$HOME/local` during compilation of the grpc source, so I exported my PATH as follows:
+
+```bash
+export PATH="$PATH:$MY_INSTALL_DIR/bin"
+```
+
+To compile, run: 
+
+```bash
+mkdir -p cmake/build
+cd cmake/build
+cmake ../..
+make -j
+```
