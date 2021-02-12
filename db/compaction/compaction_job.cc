@@ -1481,7 +1481,7 @@ Status CompactionJob::FinishCompactionOutputFile(
 }
 
 std::atomic<uint64_t> install_compaction_result_counter{0};
-std::string remote_sst_dir = "/mnt/nvme0n1p4/sst_dir/sst_last_run/";
+std::string remote_sst_dir = "/mnt/remote/sst_dir/sst_last_run/";
 
 Status CompactionJob::InstallCompactionResults(
     const MutableCFOptions& mutable_cf_options) {

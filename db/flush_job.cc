@@ -462,7 +462,7 @@ Status FlushJob::WriteLevel0Table() {
 
     edit_->SetBlobFileAdditions(std::move(blob_file_additions));
 
-    // RUBBLE: write compaction metadata file
+    // RUBBLE: ship L0 Table to remote dir
     IOStatus ios;
     std::string fname = TableFileName(cfd_->ioptions()->cf_paths,
                       meta_.fd.GetNumber(), meta_.fd.GetPathId());
@@ -475,7 +475,7 @@ Status FlushJob::WriteLevel0Table() {
     std::string sst_file_name = std::string("000000").replace(6 - sst_number.length(), sst_number.length(), sst_number) + ".sst";
 
     
-    ios = CopyFile(db_options_.fs.get(), fname, "/mnt/nvme0n1p4/sst_dir/sst_last_run/" + sst_file_name, 0,  true);
+    ios = CopyFile(db_options_.fs.get(), fname, "/mnt/remote/sst_dir/sst_last_run/" + sst_file_name, 0,  true);
 
     if (!ios.ok()){
       fprintf(stderr, " file copy failed: %lu\n", meta_.fd.GetNumber());
