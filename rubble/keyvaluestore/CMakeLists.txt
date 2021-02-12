@@ -15,11 +15,13 @@
 
 cmake_minimum_required(VERSION 3.5.1)
 
-set (CMAKE_CXX_STANDARD 11)
+project(keyvaluestore C CXX)
 
-if(MSVC)
-  add_definitions(-D_WIN32_WINNT=0x600)
-endif()
+ if(NOT MSVC)
+   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+ else()
+   add_definitions(-D_WIN32_WINNT=0x600)
+ endif()
 
 find_package(Threads REQUIRED)
 
@@ -142,12 +144,13 @@ add_custom_command(
 # Include generated *.pb.h files
 include_directories("${CMAKE_CURRENT_BINARY_DIR}")
 
-INCLUDE_DIRECTORIES(/mnt/sdb/my_rocksdb/include)
-LINK_DIRECTORIES(/mnt/sdb/my_rocksdb)
+include_directories(/mnt/sdb/my_rocksdb/include)
+link_directories(/mnt/sdb/my_rocksdb)
+
 
 # Targets (client|server)
 foreach(_target
-   client server)
+   kv_store_client kv_store_server)
   add_executable(${_target} "${_target}.cc"
     ${kv_proto_srcs}
     ${kv_grpc_srcs})
