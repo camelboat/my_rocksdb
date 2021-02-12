@@ -64,6 +64,9 @@
 #include<iostream>
 #include<fstream>
 
+//RUBBLE
+#include "rubble/logAndApply/log_and_apply_client.h"
+
 namespace ROCKSDB_NAMESPACE {
 
 namespace {
@@ -4326,6 +4329,11 @@ Status VersionSet::ProcessManifestWrites(
 }
 
 std::atomic<uint64_t> log_and_apply_counter{0};
+std::string secondary = "10.10.1.2:50051";
+
+LogAndApplyClient log_and_apply_client(grpc::CreateChannel(
+      secondary, grpc::InsecureChannelCredentials()));
+
 // 'datas' is gramatically incorrect. We still use this notation to indicate
 // that this variable represents a collection of column_family_data.
 Status VersionSet::LogAndApply(
@@ -4342,6 +4350,16 @@ Status VersionSet::LogAndApply(
   // 3) TryInstallMemtableFlushResults inside memtable_list.cc, which tries to record a successful flush in the manifest file.
 
   // fprintf(stderr, "calling log and apply %lu th times\n", log_and_apply_counter.load(std::memory_order_relaxed));
+
+  // the passed new_descriptor should all defalut to false under three scenerios?
+  // assert(new_descriptor_log == false);
+  bool ok = log_and_apply_client.logApply(edit_lists);
+  if(ok){
+    std::cout << "log_and_apply succeeds" << std::endl;
+  }else{
+    std::cout << "log_and_apply failed\n";
+  }
+
   log_and_apply_counter++;
 
   int num_edits = 0;
