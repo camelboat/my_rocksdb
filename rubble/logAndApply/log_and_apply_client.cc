@@ -1,9 +1,4 @@
-#pragma once
-
 #include "log_and_apply_client.h"
-
-#include <grpcpp.grpcpp.h>
-#include "logAndApply.grpc.pb.h"
 
 using grpc::Channel;
 using grpc::ClientContext;

@@ -1,6 +1,3 @@
-#pragma once
-
-#include "keyvaluestore/kv_store_server.h"
 #include "secondary_server.h"
 #include <grpcpp/grpcpp.h>
 #include "logAndApply.grpc.pb.h"
@@ -15,8 +12,10 @@ using namespace logAndApply;
 
 class Secondary : public KeyValueStoreServiceImpl, public LogAndApply::Service {
   public:
-    explicit Secondary(KeyValueStoreServiceImpl kv_store)
-      :db_(kv_store.GetDB()){}
+    explicit Secondary(std::string db_path
+      // KeyValueStoreServiceImpl& kv_store
+      )
+      :KeyValueStoreServiceImpl(db_path){}
 
     ~Secondary(){
       delete db_;
@@ -55,22 +54,6 @@ class Secondary : public KeyValueStoreServiceImpl, public LogAndApply::Service {
       return Status::Ok;
     }
   
-  private:
-    rocksdb::DB* db_;
-}
-
-
-void RunServer(const std::string& db_path) {
-
-  std::string server_address = "0.0.0.0:50051";
-  KeyValueStoreServiceImpl service(db_path);
-
-  ServerBuilder builder;
-  builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
-  builder.RegisterService(&service);
-  std::unique_ptr<Server> server(builder.BuildAndStart());
-  std::cout << "Server listening on " << server_address << std::endl;
-  server->Wait();
 }
 
 int main(int argc, char** argv) {

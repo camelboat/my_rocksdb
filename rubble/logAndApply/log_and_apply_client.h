@@ -3,9 +3,8 @@
 #include <string>
 
 #include "rocksdb/db.h"
-#include "db/version_edit.h"
 
-#include <grpcpp.grpcpp.h>
+#include <grpcpp/grpcpp.h>
 #include "logAndApply.grpc.pb.h"
 
 using grpc::Channel;
@@ -47,8 +46,8 @@ class LogAndApplyClient {
             f_meta.set_largest_key(*meta.largest.rep());
 
             // optional fields, not sure if you need those
-            f_meta.set_olest_ancestor_time(meta.oldest_ancester_time);
-            f_meta.set_file_creaction_time(meta.file_creation_time);
+            f_meta.set_oldest_ancestor_time(meta.oldest_ancester_time);
+            f_meta.set_file_creation_time(meta.file_creation_time);
             f_meta.set_file_checksum(meta.file_checksum);
             f_meta.set_file_checksum_func_name(meta.file_checksum_func_name);
 

@@ -3,10 +3,11 @@
 #include <string>
 
 #include "rocksdb/db.h"
-#include "db/db_impl/db_impl.h"
-#include "db/version_set.h"
-#include "util/autovector.h"
-#include "db/version_edit.h"
+#include "../../db/db_impl/db_impl.h"
+#include "../../db/version_set.h"
+#include "../../db/version_edit.h"
+
+#include "keyvaluestore/kv_store_server.h"
 
 #include <grpcpp/grpcpp.h>
 #include "logAndApply.grpc.pb.h"
@@ -21,12 +22,10 @@ using namespace logAndApply;
 
 class Secondary : public KeyValueStoreServiceImpl, public LogAndApply::Service {
   public:
-    explicit Secondary(KeyValueStoreServiceImpl kv_store)
-      :db_(kv_store.GetDB()){}
+    explicit Secondary(std::string db_path)
+      :KeyValueStoreServiceImpl(db_path){}
 
-    ~Secondary(){
-      delete db_;
-    }
+    ~Secondary(){}
 
     // seondary should also accept logAndApply request sent from the primary
     Status LogAndApply(ServerContext* context, const EditLists* edit_lists_received,
@@ -96,8 +95,5 @@ class Secondary : public KeyValueStoreServiceImpl, public LogAndApply::Service {
         edit_lists.emplace_back(edit_list);
       }
     }
-  
-  private:
-    rocksdb::DB* db_;
 }
 
