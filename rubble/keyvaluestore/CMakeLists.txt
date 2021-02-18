@@ -150,7 +150,7 @@ link_directories(/mnt/sdb/my_rocksdb)
 
 # Targets (client|server)
 foreach(_target
-   kv_store_client kv_store_server)
+   kv_store_client primary_server)
   add_executable(${_target} "${_target}.cc"
     ${kv_proto_srcs}
     ${kv_grpc_srcs})

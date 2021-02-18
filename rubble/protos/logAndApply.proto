@@ -5,7 +5,7 @@ option java_package = "io.grpc.rubble.logAndApply";
 option java_outer_classname = "logAndApplyProto";
 option objc_class_prefix = "lAA";
 
-package logAndApply;
+package logapply;
 
 // The logAndApply service.
 service logAndApply {

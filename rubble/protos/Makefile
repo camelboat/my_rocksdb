@@ -16,5 +16,6 @@ keyvaluestore:
 .PHONY:keyvaluestore
 
 clean:
-	rm ${OUTPUT_DIR}/logAndApply.*
+	rm ${LA_OUT_DIR}/logAndApply.*
+	rm ${KV_OUT_DIR}/keyvaluestore.*
 .PHONY:clean

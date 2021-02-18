@@ -4353,11 +4353,16 @@ Status VersionSet::LogAndApply(
 
   // the passed new_descriptor should all defalut to false under three scenerios?
   // assert(new_descriptor_log == false);
-  bool ok = log_and_apply_client.logApply(edit_lists);
-  if(ok){
-    std::cout << "log_and_apply succeeds" << std::endl;
-  }else{
-    std::cout << "log_and_apply failed\n";
+
+  const ImmutableDBOptions* options = db_options();
+
+  if(options->rubble_mode){
+    bool ok = log_and_apply_client.logApply(edit_lists);
+    if(ok){
+      std::cout << "log_and_apply succeeds" << std::endl;
+    }else{
+      std::cout << "log_and_apply failed\n";
+    }
   }
 
   log_and_apply_counter++;
