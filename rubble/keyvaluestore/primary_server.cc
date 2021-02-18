@@ -21,6 +21,7 @@ int main(int argc, char** argv) {
   options.OptimizeLevelStyleCompaction();
   // create the DB if it's not already present
   options.create_if_missing = true;
+  options.rubble_mode = true;
 
   std::string db_path = "/mnt/sdb/archive_dbs/temp";
 

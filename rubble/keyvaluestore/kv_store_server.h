@@ -53,9 +53,8 @@ class KeyValueStoreServiceImpl  : public KeyValueStore::Service {
     rocksdb::DB* db_;
 };
 
-void RunServer(const std::string& db_path) {
+void RunServer(const std::string& db_path, const rocksdb::Options& options, const std::string& server_address) {
 
-  std::string server_address = "0.0.0.0:50051";
   KeyValueStoreServiceImpl service(db_path);
 
   ServerBuilder builder;

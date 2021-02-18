@@ -127,9 +127,9 @@ get_filename_component(kv_proto "../protos/keyvaluestore.proto" ABSOLUTE)
 get_filename_component(kv_proto_path "${kv_proto}" PATH)
 
 # Generated sources
-set(kv_proto_srcs "${CMAKE_CURRENT_BINARY_DIR}/keyvaluestore.pb.cc")
-set(kv_proto_hdrs "${CMAKE_CURRENT_BINARY_DIR}/keyvaluestore.pb.h")
-set(kv_grpc_srcs "${CMAKE_CURRENT_BINARY_DIR}/keyvaluestore.grpc.pb.cc")
+set(kv_preyvaluestore.pb.h")
+set(kv_grpc_srcs "${CMAKE_CURRENT_BINARY_DIR}/keyvaluestoroto_srcs "${CMAKE_CURRENT_BINARY_DIR}/keyvaluestore.pb.cc")
+set(kv_proto_hdrs "${CMAKE_CURRENT_BINARY_DIR}/ke.grpc.pb.cc")
 set(kv_grpc_hdrs "${CMAKE_CURRENT_BINARY_DIR}/keyvaluestore.grpc.pb.h")
 add_custom_command(
       OUTPUT "${kv_proto_srcs}" "${kv_proto_hdrs}" "${kv_grpc_srcs}" "${kv_grpc_hdrs}"

@@ -828,6 +828,8 @@ set(SOURCES
         utilities/ttl/db_ttl_impl.cc
         utilities/write_batch_with_index/write_batch_with_index.cc
         utilities/write_batch_with_index/write_batch_with_index_internal.cc
+        rubble/logAndApply/logAndApply.grpc.pb.cc
+        rubble/logAndApply/logAndApply.pb.cc
         $<TARGET_OBJECTS:build_version>)
 
 if(HAVE_SSE42 AND NOT MSVC)
@@ -1047,11 +1049,11 @@ endif()
 
 option(WITH_JNI "build with JNI" OFF)
 # Tests are excluded from Release builds
-CMAKE_DEPENDENT_OPTION(WITH_TESTS "build with tests" ON
+CMAKE_DEPENDENT_OPTION(WITH_TESTS "build with tests" OFF
   "CMAKE_BUILD_TYPE STREQUAL Debug" OFF)
-option(WITH_BENCHMARK_TOOLS "build with benchmarks" ON)
-option(WITH_CORE_TOOLS "build with ldb and sst_dump" ON)
-option(WITH_TOOLS "build with tools" ON)
+option(WITH_BENCHMARK_TOOLS "build with benchmarks" OFF)
+option(WITH_CORE_TOOLS "build with ldb and sst_dump" OFF)
+option(WITH_TOOLS "build with tools" OFF)
 
 if(WITH_TESTS OR WITH_BENCHMARK_TOOLS OR WITH_TOOLS OR WITH_JNI OR JNI)
   include_directories(SYSTEM ${PROJECT_SOURCE_DIR}/third-party/gtest-1.8.1/fused-src)
@@ -1131,7 +1133,8 @@ if(NOT WIN32 OR ROCKSDB_INSTALL_ON_WINDOWS)
   )
 endif()
 
-option(WITH_ALL_TESTS "Build all test, rather than a small subset" ON)
+option(WITH_ALL_TESTS "Build all test, rather than a small subset" OFF)
+option(WITH_TESTS "build with tests" OFF)
 
 if(WITH_TESTS OR WITH_BENCHMARK_TOOLS)
   add_subdirectory(third-party/gtest-1.8.1/fused-src/gtest)
@@ -1142,11 +1145,13 @@ if(WITH_TESTS OR WITH_BENCHMARK_TOOLS)
 endif()
 
 if(WITH_TESTS)
+  message(STATUS "with tests yes")
   set(TESTS
         db/db_basic_test.cc
         env/env_basic_test.cc
   )
   if(WITH_ALL_TESTS)
+    message(STATUS "with all tests yes")
     list(APPEND TESTS
         cache/cache_test.cc
         cache/lru_cache_test.cc

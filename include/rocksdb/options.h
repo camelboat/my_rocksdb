@@ -1196,6 +1196,11 @@ struct DBOptions {
   //
   // Default: hostname
   std::string db_host_id = kHostnameForDbHostId;
+
+
+  //RUBBLR
+  // use rubble mode
+  bool rubble_mode = false;
 };
 
 // Options to control the behavior of a database (passed to DB::Open)

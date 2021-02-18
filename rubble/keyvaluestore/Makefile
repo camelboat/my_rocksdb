@@ -75,17 +75,6 @@ CMAKE_BINARY_DIR = /mnt/sdb/my_rocksdb/rubble/keyvaluestore
 #=============================================================================
 # Targets provided globally by CMake.
 
-# Special rule for the target edit_cache
-edit_cache:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "No interactive CMake dialog available..."
-	/usr/local/bin/cmake -E echo No\ interactive\ CMake\ dialog\ available.
-.PHONY : edit_cache
-
-# Special rule for the target edit_cache
-edit_cache/fast: edit_cache
-
-.PHONY : edit_cache/fast
-
 # Special rule for the target rebuild_cache
 rebuild_cache:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake to regenerate build system..."
@@ -96,6 +85,17 @@ rebuild_cache:
 rebuild_cache/fast: rebuild_cache
 
 .PHONY : rebuild_cache/fast
+
+# Special rule for the target edit_cache
+edit_cache:
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "No interactive CMake dialog available..."
+	/usr/local/bin/cmake -E echo No\ interactive\ CMake\ dialog\ available.
+.PHONY : edit_cache
+
+# Special rule for the target edit_cache
+edit_cache/fast: edit_cache
+
+.PHONY : edit_cache/fast
 
 # The main all target
 all: cmake_check_build_system
@@ -143,17 +143,17 @@ kv_store_client/fast:
 .PHONY : kv_store_client/fast
 
 #=============================================================================
-# Target rules for targets named kv_store_server
+# Target rules for targets named primary_server
 
 # Build rule for target.
-kv_store_server: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 kv_store_server
-.PHONY : kv_store_server
+primary_server: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 primary_server
+.PHONY : primary_server
 
 # fast build rule for target.
-kv_store_server/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/kv_store_server.dir/build.make CMakeFiles/kv_store_server.dir/build
-.PHONY : kv_store_server/fast
+primary_server/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/primary_server.dir/build.make CMakeFiles/primary_server.dir/build
+.PHONY : primary_server/fast
 
 keyvaluestore.grpc.pb.o: keyvaluestore.grpc.pb.cc.o
 
@@ -162,7 +162,7 @@ keyvaluestore.grpc.pb.o: keyvaluestore.grpc.pb.cc.o
 # target to build an object file
 keyvaluestore.grpc.pb.cc.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/kv_store_client.dir/build.make CMakeFiles/kv_store_client.dir/keyvaluestore.grpc.pb.cc.o
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/kv_store_server.dir/build.make CMakeFiles/kv_store_server.dir/keyvaluestore.grpc.pb.cc.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/primary_server.dir/build.make CMakeFiles/primary_server.dir/keyvaluestore.grpc.pb.cc.o
 .PHONY : keyvaluestore.grpc.pb.cc.o
 
 keyvaluestore.grpc.pb.i: keyvaluestore.grpc.pb.cc.i
@@ -172,7 +172,7 @@ keyvaluestore.grpc.pb.i: keyvaluestore.grpc.pb.cc.i
 # target to preprocess a source file
 keyvaluestore.grpc.pb.cc.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/kv_store_client.dir/build.make CMakeFiles/kv_store_client.dir/keyvaluestore.grpc.pb.cc.i
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/kv_store_server.dir/build.make CMakeFiles/kv_store_server.dir/keyvaluestore.grpc.pb.cc.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/primary_server.dir/build.make CMakeFiles/primary_server.dir/keyvaluestore.grpc.pb.cc.i
 .PHONY : keyvaluestore.grpc.pb.cc.i
 
 keyvaluestore.grpc.pb.s: keyvaluestore.grpc.pb.cc.s
@@ -182,7 +182,7 @@ keyvaluestore.grpc.pb.s: keyvaluestore.grpc.pb.cc.s
 # target to generate assembly for a file
 keyvaluestore.grpc.pb.cc.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/kv_store_client.dir/build.make CMakeFiles/kv_store_client.dir/keyvaluestore.grpc.pb.cc.s
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/kv_store_server.dir/build.make CMakeFiles/kv_store_server.dir/keyvaluestore.grpc.pb.cc.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/primary_server.dir/build.make CMakeFiles/primary_server.dir/keyvaluestore.grpc.pb.cc.s
 .PHONY : keyvaluestore.grpc.pb.cc.s
 
 keyvaluestore.pb.o: keyvaluestore.pb.cc.o
@@ -192,7 +192,7 @@ keyvaluestore.pb.o: keyvaluestore.pb.cc.o
 # target to build an object file
 keyvaluestore.pb.cc.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/kv_store_client.dir/build.make CMakeFiles/kv_store_client.dir/keyvaluestore.pb.cc.o
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/kv_store_server.dir/build.make CMakeFiles/kv_store_server.dir/keyvaluestore.pb.cc.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/primary_server.dir/build.make CMakeFiles/primary_server.dir/keyvaluestore.pb.cc.o
 .PHONY : keyvaluestore.pb.cc.o
 
 keyvaluestore.pb.i: keyvaluestore.pb.cc.i
@@ -202,7 +202,7 @@ keyvaluestore.pb.i: keyvaluestore.pb.cc.i
 # target to preprocess a source file
 keyvaluestore.pb.cc.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/kv_store_client.dir/build.make CMakeFiles/kv_store_client.dir/keyvaluestore.pb.cc.i
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/kv_store_server.dir/build.make CMakeFiles/kv_store_server.dir/keyvaluestore.pb.cc.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/primary_server.dir/build.make CMakeFiles/primary_server.dir/keyvaluestore.pb.cc.i
 .PHONY : keyvaluestore.pb.cc.i
 
 keyvaluestore.pb.s: keyvaluestore.pb.cc.s
@@ -212,7 +212,7 @@ keyvaluestore.pb.s: keyvaluestore.pb.cc.s
 # target to generate assembly for a file
 keyvaluestore.pb.cc.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/kv_store_client.dir/build.make CMakeFiles/kv_store_client.dir/keyvaluestore.pb.cc.s
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/kv_store_server.dir/build.make CMakeFiles/kv_store_server.dir/keyvaluestore.pb.cc.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/primary_server.dir/build.make CMakeFiles/primary_server.dir/keyvaluestore.pb.cc.s
 .PHONY : keyvaluestore.pb.cc.s
 
 kv_store_client.o: kv_store_client.cc.o
@@ -242,32 +242,32 @@ kv_store_client.cc.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/kv_store_client.dir/build.make CMakeFiles/kv_store_client.dir/kv_store_client.cc.s
 .PHONY : kv_store_client.cc.s
 
-kv_store_server.o: kv_store_server.cc.o
+primary_server.o: primary_server.cc.o
 
-.PHONY : kv_store_server.o
+.PHONY : primary_server.o
 
 # target to build an object file
-kv_store_server.cc.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/kv_store_server.dir/build.make CMakeFiles/kv_store_server.dir/kv_store_server.cc.o
-.PHONY : kv_store_server.cc.o
+primary_server.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/primary_server.dir/build.make CMakeFiles/primary_server.dir/primary_server.cc.o
+.PHONY : primary_server.cc.o
 
-kv_store_server.i: kv_store_server.cc.i
+primary_server.i: primary_server.cc.i
 
-.PHONY : kv_store_server.i
+.PHONY : primary_server.i
 
 # target to preprocess a source file
-kv_store_server.cc.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/kv_store_server.dir/build.make CMakeFiles/kv_store_server.dir/kv_store_server.cc.i
-.PHONY : kv_store_server.cc.i
+primary_server.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/primary_server.dir/build.make CMakeFiles/primary_server.dir/primary_server.cc.i
+.PHONY : primary_server.cc.i
 
-kv_store_server.s: kv_store_server.cc.s
+primary_server.s: primary_server.cc.s
 
-.PHONY : kv_store_server.s
+.PHONY : primary_server.s
 
 # target to generate assembly for a file
-kv_store_server.cc.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/kv_store_server.dir/build.make CMakeFiles/kv_store_server.dir/kv_store_server.cc.s
-.PHONY : kv_store_server.cc.s
+primary_server.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/primary_server.dir/build.make CMakeFiles/primary_server.dir/primary_server.cc.s
+.PHONY : primary_server.cc.s
 
 # Help Target
 help:
@@ -278,7 +278,7 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... kv_store_client"
-	@echo "... kv_store_server"
+	@echo "... primary_server"
 	@echo "... keyvaluestore.grpc.pb.o"
 	@echo "... keyvaluestore.grpc.pb.i"
 	@echo "... keyvaluestore.grpc.pb.s"
@@ -288,9 +288,9 @@ help:
 	@echo "... kv_store_client.o"
 	@echo "... kv_store_client.i"
 	@echo "... kv_store_client.s"
-	@echo "... kv_store_server.o"
-	@echo "... kv_store_server.i"
-	@echo "... kv_store_server.s"
+	@echo "... primary_server.o"
+	@echo "... primary_server.i"
+	@echo "... primary_server.s"
 .PHONY : help
 
 
