@@ -130,19 +130,6 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named kv_store_client
-
-# Build rule for target.
-kv_store_client: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 kv_store_client
-.PHONY : kv_store_client
-
-# fast build rule for target.
-kv_store_client/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/kv_store_client.dir/build.make CMakeFiles/kv_store_client.dir/build
-.PHONY : kv_store_client/fast
-
-#=============================================================================
 # Target rules for targets named primary_server
 
 # Build rule for target.
@@ -155,14 +142,39 @@ primary_server/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/primary_server.dir/build.make CMakeFiles/primary_server.dir/build
 .PHONY : primary_server/fast
 
+#=============================================================================
+# Target rules for targets named kv_grpc_proto
+
+# Build rule for target.
+kv_grpc_proto: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 kv_grpc_proto
+.PHONY : kv_grpc_proto
+
+# fast build rule for target.
+kv_grpc_proto/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/kv_grpc_proto.dir/build.make CMakeFiles/kv_grpc_proto.dir/build
+.PHONY : kv_grpc_proto/fast
+
+#=============================================================================
+# Target rules for targets named kv_store_client
+
+# Build rule for target.
+kv_store_client: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 kv_store_client
+.PHONY : kv_store_client
+
+# fast build rule for target.
+kv_store_client/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/kv_store_client.dir/build.make CMakeFiles/kv_store_client.dir/build
+.PHONY : kv_store_client/fast
+
 keyvaluestore.grpc.pb.o: keyvaluestore.grpc.pb.cc.o
 
 .PHONY : keyvaluestore.grpc.pb.o
 
 # target to build an object file
 keyvaluestore.grpc.pb.cc.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/kv_store_client.dir/build.make CMakeFiles/kv_store_client.dir/keyvaluestore.grpc.pb.cc.o
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/primary_server.dir/build.make CMakeFiles/primary_server.dir/keyvaluestore.grpc.pb.cc.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/kv_grpc_proto.dir/build.make CMakeFiles/kv_grpc_proto.dir/keyvaluestore.grpc.pb.cc.o
 .PHONY : keyvaluestore.grpc.pb.cc.o
 
 keyvaluestore.grpc.pb.i: keyvaluestore.grpc.pb.cc.i
@@ -171,8 +183,7 @@ keyvaluestore.grpc.pb.i: keyvaluestore.grpc.pb.cc.i
 
 # target to preprocess a source file
 keyvaluestore.grpc.pb.cc.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/kv_store_client.dir/build.make CMakeFiles/kv_store_client.dir/keyvaluestore.grpc.pb.cc.i
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/primary_server.dir/build.make CMakeFiles/primary_server.dir/keyvaluestore.grpc.pb.cc.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/kv_grpc_proto.dir/build.make CMakeFiles/kv_grpc_proto.dir/keyvaluestore.grpc.pb.cc.i
 .PHONY : keyvaluestore.grpc.pb.cc.i
 
 keyvaluestore.grpc.pb.s: keyvaluestore.grpc.pb.cc.s
@@ -181,8 +192,7 @@ keyvaluestore.grpc.pb.s: keyvaluestore.grpc.pb.cc.s
 
 # target to generate assembly for a file
 keyvaluestore.grpc.pb.cc.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/kv_store_client.dir/build.make CMakeFiles/kv_store_client.dir/keyvaluestore.grpc.pb.cc.s
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/primary_server.dir/build.make CMakeFiles/primary_server.dir/keyvaluestore.grpc.pb.cc.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/kv_grpc_proto.dir/build.make CMakeFiles/kv_grpc_proto.dir/keyvaluestore.grpc.pb.cc.s
 .PHONY : keyvaluestore.grpc.pb.cc.s
 
 keyvaluestore.pb.o: keyvaluestore.pb.cc.o
@@ -191,8 +201,7 @@ keyvaluestore.pb.o: keyvaluestore.pb.cc.o
 
 # target to build an object file
 keyvaluestore.pb.cc.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/kv_store_client.dir/build.make CMakeFiles/kv_store_client.dir/keyvaluestore.pb.cc.o
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/primary_server.dir/build.make CMakeFiles/primary_server.dir/keyvaluestore.pb.cc.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/kv_grpc_proto.dir/build.make CMakeFiles/kv_grpc_proto.dir/keyvaluestore.pb.cc.o
 .PHONY : keyvaluestore.pb.cc.o
 
 keyvaluestore.pb.i: keyvaluestore.pb.cc.i
@@ -201,8 +210,7 @@ keyvaluestore.pb.i: keyvaluestore.pb.cc.i
 
 # target to preprocess a source file
 keyvaluestore.pb.cc.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/kv_store_client.dir/build.make CMakeFiles/kv_store_client.dir/keyvaluestore.pb.cc.i
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/primary_server.dir/build.make CMakeFiles/primary_server.dir/keyvaluestore.pb.cc.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/kv_grpc_proto.dir/build.make CMakeFiles/kv_grpc_proto.dir/keyvaluestore.pb.cc.i
 .PHONY : keyvaluestore.pb.cc.i
 
 keyvaluestore.pb.s: keyvaluestore.pb.cc.s
@@ -211,8 +219,7 @@ keyvaluestore.pb.s: keyvaluestore.pb.cc.s
 
 # target to generate assembly for a file
 keyvaluestore.pb.cc.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/kv_store_client.dir/build.make CMakeFiles/kv_store_client.dir/keyvaluestore.pb.cc.s
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/primary_server.dir/build.make CMakeFiles/primary_server.dir/keyvaluestore.pb.cc.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/kv_grpc_proto.dir/build.make CMakeFiles/kv_grpc_proto.dir/keyvaluestore.pb.cc.s
 .PHONY : keyvaluestore.pb.cc.s
 
 kv_store_client.o: kv_store_client.cc.o
@@ -277,6 +284,7 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
+	@echo "... kv_grpc_proto"
 	@echo "... kv_store_client"
 	@echo "... primary_server"
 	@echo "... keyvaluestore.grpc.pb.o"

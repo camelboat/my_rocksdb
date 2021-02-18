@@ -4,10 +4,7 @@
  *  Get also goes to both primary and secondary,
  *  but secondary 
 */
-#pragma once
-
 #include <grpcpp/grpcpp.h>
-
 #include "keyvaluestore.grpc.pb.h"
 
 using grpc::Channel;
@@ -132,17 +129,6 @@ int main(int argc, char** argv) {
 
   std::string value;
   s = client.Get(keys, value);
-  // assert(s.ok());
-  // assert(value == "value1");
-  // std::cout << "get value for key1 : " << value << "\n";
-
-  // std::vector<std::pair<std::string, std::string>> kvs;
-
-  // for(int i = 0; i < 1000; i++){
-  //     kvs.emplace_back("key" + i, "val" + i);
-  // }
-
-  // client.Put(kvs);
 
   return 0;
 }

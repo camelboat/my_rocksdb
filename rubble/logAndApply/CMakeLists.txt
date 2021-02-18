@@ -131,6 +131,7 @@ set(la_proto_srcs "${CMAKE_CURRENT_BINARY_DIR}/logAndApply.pb.cc")
 set(la_proto_hdrs "${CMAKE_CURRENT_BINARY_DIR}/logAndApply.pb.h")
 set(la_grpc_srcs "${CMAKE_CURRENT_BINARY_DIR}/logAndApply.grpc.pb.cc")
 set(la_grpc_hdrs "${CMAKE_CURRENT_BINARY_DIR}/logAndApply.grpc.pb.h")
+set(la_client_hdrs "${CMAKE_CUURENT_BINARY_DIR}log_and_apply_client.h")
 add_custom_command(
       OUTPUT "${la_proto_srcs}" "${la_proto_hdrs}" "${la_grpc_srcs}" "${la_grpc_hdrs}"
       COMMAND ${_PROTOBUF_PROTOC}
@@ -145,19 +146,44 @@ add_custom_command(
 # Include generated *.pb.h files
 include_directories("${CMAKE_CURRENT_BINARY_DIR}")
 
-include_directories(/mnt/sdb/my_rocksdb/include)
-link_directories(/mnt/sdb/my_rocksdb)
+# include_directories(/mnt/sdb/my_rocksdb/include)
+# link_directories(/mnt/sdb/my_rocksdb)
 
-
-# Targets (client|server)
-foreach(_target
-   log_and_apply_client secondary_server)
-  add_executable(${_target} "${_target}.cc"
+set(SOURCES 
+    ${la_client_hdrs}
+    ${la_grpc_hdrs}
     ${la_proto_srcs}
-    ${la_grpc_srcs})
-  target_link_libraries(${_target}
-    ${_REFLECTION}
-    ${_GRPC_GRPCPP}
-    ${_PROTOBUF_LIBPROTOBUF}
-    librocksdb.a)
-endforeach()
+    ${la_grpc_srcs}
+    ${la_proto_hdrs}
+  )
+
+# la_grpc_proto
+add_library(log_and_apply
+ ${SOURCES})
+target_link_libraries(log_and_apply
+  ${_REFLECTION}
+  ${_GRPC_GRPCPP}
+  ${_PROTOBUF_LIBPROTOBUF}
+  )
+
+
+install(
+  TARGETS log_and_apply
+  EXPORT LogAndApplyTargets
+  COMPONENT devel
+  ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+  INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+)
+# Targets (client|server)
+# foreach(_target
+#    log_and_apply_client secondary_server)
+#   add_executable(${_target} 
+#   "${_target}.cc"
+#     ${la_proto_srcs}
+#     ${la_grpc_srcs})
+#   target_link_libraries(${_target}
+#     ${_REFLECTION}
+#     ${_GRPC_GRPCPP}
+#     ${_PROTOBUF_LIBPROTOBUF}
+#     librocksdb.a)
+# endforeach()

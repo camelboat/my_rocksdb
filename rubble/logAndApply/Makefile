@@ -75,16 +75,17 @@ CMAKE_BINARY_DIR = /mnt/sdb/my_rocksdb/rubble/logAndApply
 #=============================================================================
 # Targets provided globally by CMake.
 
-# Special rule for the target rebuild_cache
-rebuild_cache:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake to regenerate build system..."
-	/usr/local/bin/cmake --regenerate-during-build -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
-.PHONY : rebuild_cache
+# Special rule for the target install/strip
+install/strip: preinstall
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Installing the project stripped..."
+	/usr/local/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
+.PHONY : install/strip
 
-# Special rule for the target rebuild_cache
-rebuild_cache/fast: rebuild_cache
-
-.PHONY : rebuild_cache/fast
+# Special rule for the target install/strip
+install/strip/fast: preinstall/fast
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Installing the project stripped..."
+	/usr/local/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
+.PHONY : install/strip/fast
 
 # Special rule for the target edit_cache
 edit_cache:
@@ -96,6 +97,51 @@ edit_cache:
 edit_cache/fast: edit_cache
 
 .PHONY : edit_cache/fast
+
+# Special rule for the target rebuild_cache
+rebuild_cache:
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake to regenerate build system..."
+	/usr/local/bin/cmake --regenerate-during-build -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
+.PHONY : rebuild_cache
+
+# Special rule for the target rebuild_cache
+rebuild_cache/fast: rebuild_cache
+
+.PHONY : rebuild_cache/fast
+
+# Special rule for the target list_install_components
+list_install_components:
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Available install components are: \"devel\""
+.PHONY : list_install_components
+
+# Special rule for the target list_install_components
+list_install_components/fast: list_install_components
+
+.PHONY : list_install_components/fast
+
+# Special rule for the target install/local
+install/local: preinstall
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Installing only the local directory..."
+	/usr/local/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
+.PHONY : install/local
+
+# Special rule for the target install/local
+install/local/fast: preinstall/fast
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Installing only the local directory..."
+	/usr/local/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
+.PHONY : install/local/fast
+
+# Special rule for the target install
+install: preinstall
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Install the project..."
+	/usr/local/bin/cmake -P cmake_install.cmake
+.PHONY : install
+
+# Special rule for the target install
+install/fast: preinstall/fast
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Install the project..."
+	/usr/local/bin/cmake -P cmake_install.cmake
+.PHONY : install/fast
 
 # The main all target
 all: cmake_check_build_system
@@ -130,30 +176,17 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named log_and_apply_client
+# Target rules for targets named log_and_apply
 
 # Build rule for target.
-log_and_apply_client: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 log_and_apply_client
-.PHONY : log_and_apply_client
+log_and_apply: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 log_and_apply
+.PHONY : log_and_apply
 
 # fast build rule for target.
-log_and_apply_client/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/log_and_apply_client.dir/build.make CMakeFiles/log_and_apply_client.dir/build
-.PHONY : log_and_apply_client/fast
-
-#=============================================================================
-# Target rules for targets named secondary_server
-
-# Build rule for target.
-secondary_server: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 secondary_server
-.PHONY : secondary_server
-
-# fast build rule for target.
-secondary_server/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/secondary_server.dir/build.make CMakeFiles/secondary_server.dir/build
-.PHONY : secondary_server/fast
+log_and_apply/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/log_and_apply.dir/build.make CMakeFiles/log_and_apply.dir/build
+.PHONY : log_and_apply/fast
 
 logAndApply.grpc.pb.o: logAndApply.grpc.pb.cc.o
 
@@ -161,8 +194,7 @@ logAndApply.grpc.pb.o: logAndApply.grpc.pb.cc.o
 
 # target to build an object file
 logAndApply.grpc.pb.cc.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/log_and_apply_client.dir/build.make CMakeFiles/log_and_apply_client.dir/logAndApply.grpc.pb.cc.o
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/secondary_server.dir/build.make CMakeFiles/secondary_server.dir/logAndApply.grpc.pb.cc.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/log_and_apply.dir/build.make CMakeFiles/log_and_apply.dir/logAndApply.grpc.pb.cc.o
 .PHONY : logAndApply.grpc.pb.cc.o
 
 logAndApply.grpc.pb.i: logAndApply.grpc.pb.cc.i
@@ -171,8 +203,7 @@ logAndApply.grpc.pb.i: logAndApply.grpc.pb.cc.i
 
 # target to preprocess a source file
 logAndApply.grpc.pb.cc.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/log_and_apply_client.dir/build.make CMakeFiles/log_and_apply_client.dir/logAndApply.grpc.pb.cc.i
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/secondary_server.dir/build.make CMakeFiles/secondary_server.dir/logAndApply.grpc.pb.cc.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/log_and_apply.dir/build.make CMakeFiles/log_and_apply.dir/logAndApply.grpc.pb.cc.i
 .PHONY : logAndApply.grpc.pb.cc.i
 
 logAndApply.grpc.pb.s: logAndApply.grpc.pb.cc.s
@@ -181,8 +212,7 @@ logAndApply.grpc.pb.s: logAndApply.grpc.pb.cc.s
 
 # target to generate assembly for a file
 logAndApply.grpc.pb.cc.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/log_and_apply_client.dir/build.make CMakeFiles/log_and_apply_client.dir/logAndApply.grpc.pb.cc.s
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/secondary_server.dir/build.make CMakeFiles/secondary_server.dir/logAndApply.grpc.pb.cc.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/log_and_apply.dir/build.make CMakeFiles/log_and_apply.dir/logAndApply.grpc.pb.cc.s
 .PHONY : logAndApply.grpc.pb.cc.s
 
 logAndApply.pb.o: logAndApply.pb.cc.o
@@ -191,8 +221,7 @@ logAndApply.pb.o: logAndApply.pb.cc.o
 
 # target to build an object file
 logAndApply.pb.cc.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/log_and_apply_client.dir/build.make CMakeFiles/log_and_apply_client.dir/logAndApply.pb.cc.o
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/secondary_server.dir/build.make CMakeFiles/secondary_server.dir/logAndApply.pb.cc.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/log_and_apply.dir/build.make CMakeFiles/log_and_apply.dir/logAndApply.pb.cc.o
 .PHONY : logAndApply.pb.cc.o
 
 logAndApply.pb.i: logAndApply.pb.cc.i
@@ -201,8 +230,7 @@ logAndApply.pb.i: logAndApply.pb.cc.i
 
 # target to preprocess a source file
 logAndApply.pb.cc.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/log_and_apply_client.dir/build.make CMakeFiles/log_and_apply_client.dir/logAndApply.pb.cc.i
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/secondary_server.dir/build.make CMakeFiles/secondary_server.dir/logAndApply.pb.cc.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/log_and_apply.dir/build.make CMakeFiles/log_and_apply.dir/logAndApply.pb.cc.i
 .PHONY : logAndApply.pb.cc.i
 
 logAndApply.pb.s: logAndApply.pb.cc.s
@@ -211,63 +239,8 @@ logAndApply.pb.s: logAndApply.pb.cc.s
 
 # target to generate assembly for a file
 logAndApply.pb.cc.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/log_and_apply_client.dir/build.make CMakeFiles/log_and_apply_client.dir/logAndApply.pb.cc.s
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/secondary_server.dir/build.make CMakeFiles/secondary_server.dir/logAndApply.pb.cc.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/log_and_apply.dir/build.make CMakeFiles/log_and_apply.dir/logAndApply.pb.cc.s
 .PHONY : logAndApply.pb.cc.s
-
-log_and_apply_client.o: log_and_apply_client.cc.o
-
-.PHONY : log_and_apply_client.o
-
-# target to build an object file
-log_and_apply_client.cc.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/log_and_apply_client.dir/build.make CMakeFiles/log_and_apply_client.dir/log_and_apply_client.cc.o
-.PHONY : log_and_apply_client.cc.o
-
-log_and_apply_client.i: log_and_apply_client.cc.i
-
-.PHONY : log_and_apply_client.i
-
-# target to preprocess a source file
-log_and_apply_client.cc.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/log_and_apply_client.dir/build.make CMakeFiles/log_and_apply_client.dir/log_and_apply_client.cc.i
-.PHONY : log_and_apply_client.cc.i
-
-log_and_apply_client.s: log_and_apply_client.cc.s
-
-.PHONY : log_and_apply_client.s
-
-# target to generate assembly for a file
-log_and_apply_client.cc.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/log_and_apply_client.dir/build.make CMakeFiles/log_and_apply_client.dir/log_and_apply_client.cc.s
-.PHONY : log_and_apply_client.cc.s
-
-secondary_server.o: secondary_server.cc.o
-
-.PHONY : secondary_server.o
-
-# target to build an object file
-secondary_server.cc.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/secondary_server.dir/build.make CMakeFiles/secondary_server.dir/secondary_server.cc.o
-.PHONY : secondary_server.cc.o
-
-secondary_server.i: secondary_server.cc.i
-
-.PHONY : secondary_server.i
-
-# target to preprocess a source file
-secondary_server.cc.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/secondary_server.dir/build.make CMakeFiles/secondary_server.dir/secondary_server.cc.i
-.PHONY : secondary_server.cc.i
-
-secondary_server.s: secondary_server.cc.s
-
-.PHONY : secondary_server.s
-
-# target to generate assembly for a file
-secondary_server.cc.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/secondary_server.dir/build.make CMakeFiles/secondary_server.dir/secondary_server.cc.s
-.PHONY : secondary_server.cc.s
 
 # Help Target
 help:
@@ -276,21 +249,18 @@ help:
 	@echo "... clean"
 	@echo "... depend"
 	@echo "... edit_cache"
+	@echo "... install"
+	@echo "... install/local"
+	@echo "... install/strip"
+	@echo "... list_install_components"
 	@echo "... rebuild_cache"
-	@echo "... log_and_apply_client"
-	@echo "... secondary_server"
+	@echo "... log_and_apply"
 	@echo "... logAndApply.grpc.pb.o"
 	@echo "... logAndApply.grpc.pb.i"
 	@echo "... logAndApply.grpc.pb.s"
 	@echo "... logAndApply.pb.o"
 	@echo "... logAndApply.pb.i"
 	@echo "... logAndApply.pb.s"
-	@echo "... log_and_apply_client.o"
-	@echo "... log_and_apply_client.i"
-	@echo "... log_and_apply_client.s"
-	@echo "... secondary_server.o"
-	@echo "... secondary_server.i"
-	@echo "... secondary_server.s"
 .PHONY : help
 
 

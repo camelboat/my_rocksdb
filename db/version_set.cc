@@ -4114,11 +4114,6 @@ Status VersionSet::ProcessManifestWrites(
       size_t idx = 0;
 #endif
 
-      // also send those manifest records to the secondary
-       std::string filepath = "/mnt/nvme0n1p4/manifest_meta/"+std::to_string(manifest_write_counter.load(std::memory_order_relaxed));
-       std::ofstream metafile;
-       metafile.open(filepath);
-
       for (auto& e : batch_edits) {
         std::string record;
         if (!e->EncodeTo(&record)) {
@@ -4126,8 +4121,6 @@ Status VersionSet::ProcessManifestWrites(
                                  e->DebugString(true));
           break;
         }
-        
-        metafile << record + "\n";
 
         TEST_KILL_RANDOM("VersionSet::LogAndApply:BeforeAddRecord",
                          rocksdb_kill_odds * REDUCE_ODDS2);
@@ -4147,9 +4140,6 @@ Status VersionSet::ProcessManifestWrites(
           break;
         }
       }
-      // probably should close after error is checked
-      metafile.close();
-      manifest_write_counter++;
 
       if (s.ok()) {
         io_s = SyncManifest(env_, db_options_, descriptor_log_->file());
@@ -4355,6 +4345,8 @@ Status VersionSet::LogAndApply(
   // assert(new_descriptor_log == false);
 
   const ImmutableDBOptions* options = db_options();
+
+  
 
   if(options->rubble_mode){
     bool ok = log_and_apply_client.logApply(edit_lists);
