@@ -167,10 +167,10 @@ foreach(_target
   )
   add_executable(${_target} "${_target}.cc")
   target_link_libraries(${_target}
+    librocksdb.a
     kv_grpc_proto
     ${_REFLECTION}
     ${_GRPC_GRPCPP}
     ${_PROTOBUF_LIBPROTOBUF}
-    librocksdb.a
     )
 endforeach()

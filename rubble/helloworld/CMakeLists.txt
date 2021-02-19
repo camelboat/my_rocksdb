@@ -156,6 +156,15 @@ target_link_libraries(hw_grpc_proto
   ${_GRPC_GRPCPP}
   ${_PROTOBUF_LIBPROTOBUF})
 
+
+  install(
+    TARGETS hw_grpc_proto
+    EXPORT hwTargets
+    COMPONENT devel
+    ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+    INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+  )
+
 # Targets greeter_[async_](client|server)
 foreach(_target
   greeter_client greeter_server

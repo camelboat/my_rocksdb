@@ -1,7 +1,7 @@
 
 GRPC_INSTALL_DIR=/root/local/bin
-LA_OUT_DIR=../logAndApply/
-KV_OUT_DIR=../keyvaluestore/
+LA_OUT_DIR=../logAndApply
+KV_OUT_DIR=../keyvaluestore
 
 GRPC_CPP_PLUGIN=${GRPC_INSTALL_DIR}/grpc_cpp_plugin
 

@@ -5,6 +5,7 @@
 #include "rocksdb/db.h"
 
 #include <grpcpp/grpcpp.h>
+#include <google/protobuf/message.h>
 #include "logAndApply.grpc.pb.h"
 
 using grpc::Channel;

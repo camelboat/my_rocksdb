@@ -4321,6 +4321,8 @@ Status VersionSet::ProcessManifestWrites(
 std::atomic<uint64_t> log_and_apply_counter{0};
 std::string secondary = "10.10.1.2:50051";
 
+
+
 LogAndApplyClient log_and_apply_client(grpc::CreateChannel(
       secondary, grpc::InsecureChannelCredentials()));
 
@@ -4345,8 +4347,6 @@ Status VersionSet::LogAndApply(
   // assert(new_descriptor_log == false);
 
   const ImmutableDBOptions* options = db_options();
-
-  
 
   if(options->rubble_mode){
     bool ok = log_and_apply_client.logApply(edit_lists);
