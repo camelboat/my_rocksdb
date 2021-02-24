@@ -130,6 +130,8 @@ class MemTableListVersion {
   // History.
   SequenceNumber GetEarliestSequenceNumber(bool include_history = false) const;
 
+  std::list<MemTable*> GetMemTable() const {return memlist_;}
+
  private:
   friend class MemTableList;
 
