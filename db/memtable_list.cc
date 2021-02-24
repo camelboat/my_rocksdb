@@ -384,6 +384,9 @@ void MemTableList::RollbackMemtableFlush(const autovector<MemTable*>& mems,
 }
 
 std::atomic<uint64_t> try_install_memtable_flush_result_counter{0};
+
+std::atomic<bool> is_flush{false};
+
 // Try record a successful flush in the manifest file. It might just return
 // Status::OK letting a concurrent flush to do actual the recording..
 Status MemTableList::TryInstallMemtableFlushResults(
@@ -487,6 +490,7 @@ Status MemTableList::TryInstallMemtableFlushResults(
       try_install_memtable_flush_result_counter++;
 
       // this can release and reacquire the mutex.
+      is_flush = true;
       s = vset->LogAndApply(cfd, mutable_cf_options, edit_list, mu,
                             db_directory);
       *io_s = vset->io_status();

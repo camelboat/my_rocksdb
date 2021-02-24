@@ -122,6 +122,12 @@ endif()
 
 project(logAndApply CXX)
 
+set(kv_proto_srcs "${CMAKE_CURRENT_BINARY_DIR}/../keyvaluestore/keyvaluestore.pb.cc")
+set(kv_proto_hdrs "${CMAKE_CURRENT_BINARY_DIR}/../keyvaluestore/keyvaluestore.pb.h")
+set(kv_grpc_srcs "${CMAKE_CURRENT_BINARY_DIR}/../keyvaluestore/keyvaluestore.grpc.pb.cc")
+set(kv_grpc_hdrs "${CMAKE_CURRENT_BINARY_DIR}/../keyvaluestore/keyvaluestore.grpc.pb.h")
+
+
 # Proto file
 get_filename_component(la_proto "../protos/logAndApply.proto" ABSOLUTE)
 get_filename_component(la_proto_path "${la_proto}" PATH)
@@ -146,10 +152,16 @@ add_custom_command(
 # Include generated *.pb.h files
 include_directories("${CMAKE_CURRENT_BINARY_DIR}")
 
-# include_directories(/mnt/sdb/my_rocksdb/include)
-# link_directories(/mnt/sdb/my_rocksdb)
+include_directories(/mnt/sdb/my_rocksdb)
+
+include_directories(/mnt/sdb/my_rocksdb/include)
+link_directories(/mnt/sdb/my_rocksdb)
 
 set(SOURCES 
+    ${kv_grpc_hdrs}
+    ${kv_proto_srcs}
+    ${kv_grpc_srcs}
+    ${kv_proto_hdrs}
     ${la_client_hdrs}
     ${la_grpc_hdrs}
     ${la_proto_srcs}
@@ -167,23 +179,26 @@ target_link_libraries(log_and_apply
   )
 
 
-install(
-  TARGETS log_and_apply
-  EXPORT LogAndApplyTargets
-  COMPONENT devel
-  ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-  INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
-)
+# install(
+#   TARGETS log_and_apply
+#   EXPORT LogAndApplyTargets
+#   COMPONENT devel
+#   ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+#   INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+# )
+
 # Targets (client|server)
-# foreach(_target
-#    log_and_apply_client secondary_server)
-#   add_executable(${_target} 
-#   "${_target}.cc"
-#     ${la_proto_srcs}
-#     ${la_grpc_srcs})
-#   target_link_libraries(${_target}
-#     ${_REFLECTION}
-#     ${_GRPC_GRPCPP}
-#     ${_PROTOBUF_LIBPROTOBUF}
-#     librocksdb.a)
-# endforeach()
+foreach(_target
+  #  log_and_apply_client
+   secondary_server)
+  add_executable(${_target} 
+  "${_target}.cc"
+    ${la_proto_srcs}
+    ${la_grpc_srcs})
+  target_link_libraries(${_target}
+    librocksdb.a
+    log_and_apply
+    ${_REFLECTION}
+    ${_GRPC_GRPCPP}
+    ${_PROTOBUF_LIBPROTOBUF})
+endforeach()

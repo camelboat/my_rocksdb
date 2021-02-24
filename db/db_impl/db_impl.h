@@ -997,6 +997,8 @@ class DBImpl : public DB {
 
   VersionSet* TEST_GetVersionSet() const { return versions_.get(); }
 
+  // Directories Get_Directories() {return directories_;}
+
   const std::unordered_set<uint64_t>& TEST_GetFilesGrabbedForPurge() const {
     return files_grabbed_for_purge_;
   }
@@ -1015,6 +1017,8 @@ class DBImpl : public DB {
 
   // flush LOG out of application buffer
   void FlushInfoLog();
+
+  Directories directories_;
 
  protected:
   const std::string dbname_;
@@ -1931,7 +1935,7 @@ class DBImpl : public DB {
 
   bool stats_slice_initialized_ = false;
 
-  Directories directories_;
+  // Directories directories_;
 
   WriteBufferManager* write_buffer_manager_;
 

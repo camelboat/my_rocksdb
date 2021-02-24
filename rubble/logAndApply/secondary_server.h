@@ -3,11 +3,12 @@
 #include <string>
 
 #include "rocksdb/db.h"
-#include "../../db/db_impl/db_impl.h"
-#include "../../db/version_set.h"
-#include "../../db/version_edit.h"
+// #include "db/db_impl/db_impl.h"
+// #include "../../db/db_impl/db_impl.h"
+// #include "../../db/version_set.h"
+// #include "../../db/version_edit.h"
 
-#include "keyvaluestore/kv_store_server.h"
+#include "../keyvaluestore/primary_server.h"
 
 #include <grpcpp/grpcpp.h>
 #include "logAndApply.grpc.pb.h"
@@ -18,9 +19,9 @@ using grpc::ServerContext;
 using grpc::ServerReaderWriter;
 using grpc::Status;
 
-using namespace logAndApply;
+using namespace logapply;
 
-class Secondary : public KeyValueStoreServiceImpl, public LogAndApply::Service {
+class Secondary : public KeyValueStoreServiceImpl, public logAndApply::Service {
   public:
     explicit Secondary(std::string db_path)
       :KeyValueStoreServiceImpl(db_path){}

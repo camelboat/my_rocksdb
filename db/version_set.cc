@@ -4349,6 +4349,7 @@ Status VersionSet::LogAndApply(
   const ImmutableDBOptions* options = db_options();
 
   if(options->rubble_mode){
+    
     bool ok = log_and_apply_client.logApply(edit_lists);
     if(ok){
       std::cout << "log_and_apply succeeds" << std::endl;
