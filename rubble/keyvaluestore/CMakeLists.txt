@@ -128,6 +128,8 @@ get_filename_component(kv_proto "../protos/keyvaluestore.proto" ABSOLUTE)
 get_filename_component(kv_proto_path "${kv_proto}" PATH)
 
 # Generated sources
+link_libraries("/mnt/sdb/my_rocksdb/librocksdb.a")
+
 set(kv_proto_srcs "${CMAKE_CURRENT_BINARY_DIR}/keyvaluestore.pb.cc")
 set(kv_proto_hdrs "${CMAKE_CURRENT_BINARY_DIR}/keyvaluestore.pb.h")
 set(kv_grpc_srcs "${CMAKE_CURRENT_BINARY_DIR}/keyvaluestore.grpc.pb.cc")
@@ -145,6 +147,7 @@ add_custom_command(
 # Include generated *.pb.h files
 include_directories("${CMAKE_CURRENT_BINARY_DIR}")
 
+include_directories(/mnt/sdb/my_rocksdb)
 include_directories(/mnt/sdb/my_rocksdb/include)
 link_directories(/mnt/sdb/my_rocksdb)
 
@@ -163,7 +166,7 @@ target_link_libraries(kv_grpc_proto
 # Targets greeter_[async_](client|server)
 foreach(_target
   kv_store_client
-  primary_server
+  server
   )
   add_executable(${_target} "${_target}.cc")
   target_link_libraries(${_target}

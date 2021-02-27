@@ -4319,7 +4319,7 @@ Status VersionSet::ProcessManifestWrites(
 }
 
 std::atomic<uint64_t> log_and_apply_counter{0};
-std::string secondary = "10.10.1.2:50051";
+std::string secondary = "10.10.1.1:50051";
 
 
 
@@ -4427,8 +4427,19 @@ Status VersionSet::LogAndApply(
     return Status::ColumnFamilyDropped();
   }
 
-  return ProcessManifestWrites(writers, mu, db_directory, new_descriptor_log,
+  Status s = ProcessManifestWrites(writers, mu, db_directory, new_descriptor_log,
                                new_cf_options);
+
+  ColumnFamilySet* cfs = GetColumnFamilySet();
+  ColumnFamilyData* default_cf = cfs->GetDefault();
+
+  VersionStorageInfo::LevelSummaryStorage tmp;
+
+  auto vstorage = default_cf->current()->storage_info();
+  const char* c = vstorage->LevelSummary(&tmp);
+  std::cout << std::string(c) << std::endl;
+
+  return s;
 }
 
 void VersionSet::LogAndApplyCFHelper(VersionEdit* edit) {

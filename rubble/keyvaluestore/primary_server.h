@@ -25,7 +25,7 @@ rocksdb::DB* OpenDB(const std::string& db_path,const rocksdb::Options& options){
   rocksdb::DB* db;
   rocksdb::Status s = rocksdb::DB::Open(options, db_path, &db);
             assert(s.ok());
-
+  std::cout << "open db succeeds\n"; 
   return db;
 }
 
@@ -33,7 +33,9 @@ rocksdb::DB* OpenDB(const std::string& db_path,const rocksdb::Options& options){
 class KeyValueStoreServiceImpl  : public KeyValueStore::Service {
   public:
    explicit KeyValueStoreServiceImpl(rocksdb::DB* db)
-    :db_(db){};
+    :db_(db){
+      std::cout << "kv store ctor \n";
+    };
 
     ~KeyValueStoreServiceImpl(){
       delete db_;
@@ -93,6 +95,8 @@ class KeyValueStoreServiceImpl  : public KeyValueStore::Service {
 
 void RunServer(const std::string& db_path, const rocksdb::Options& options, const std::string& server_address) {
 
+  std::cout << "calling run server\n";
+  
   rocksdb::DB* db = OpenDB(db_path, options);
   KeyValueStoreServiceImpl service(db);
 

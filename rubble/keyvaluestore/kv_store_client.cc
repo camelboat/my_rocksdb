@@ -111,15 +111,18 @@ int main(int argc, char** argv) {
 
   KeyValueStoreClient client(grpc::CreateChannel(
       target_str, grpc::InsecureChannelCredentials()));
-
+  
+  KeyValueStoreClient client1(grpc::CreateChannel(
+      "10.10.1.1", grpc::InsecureChannelCredentials()));
 
   Status s;
   std::vector<std::pair<std::string, std::string>> kvs;
-  for (int i =0; i < 10; i++){
+  for (int i =0; i < 100000; i++){
     kvs.emplace_back("key" + std::to_string(i), "val" + std::to_string(i));
   }
 
   s = client.Put(kvs);
+  s = client1.Put(kvs);
   // assert(s.ok());
   
   std::vector<std::string> keys;
