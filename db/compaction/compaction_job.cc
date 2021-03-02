@@ -65,6 +65,7 @@
 #include "util/random.h"
 #include "util/stop_watch.h"
 #include "util/string_util.h"
+#include "util/shipper.h"
 
 namespace ROCKSDB_NAMESPACE {
 
@@ -1512,6 +1513,7 @@ Status CompactionJob::InstallCompactionResults(
   // RUBBLE: write compaction metadata file
   std::string filepath = "/mnt/sdb/archive_dbs/compaction_meta/"+std::to_string(job_id_);
   std::string comp_metadata_str = "";
+  std::vector<uint64_t> sst_numbers;
   for (unsigned int i=0; i<compact_->compaction->num_input_levels(); i++){
     comp_metadata_str += "d "+std::to_string(compact_->compaction->start_level());
     for (auto f : *(compact_->compaction->inputs(i))){
@@ -1526,8 +1528,10 @@ Status CompactionJob::InstallCompactionResults(
       compaction->edit()->AddFile(compaction->output_level(), out.meta);
       // RUBBLE: append output compaction files
       comp_metadata_str += " "+std::to_string(out.meta.fd.GetNumber());
+      sst_numbers.push_back(out.meta.fd.GetNumber());
     }
   }
+  ship_sst(sst_numbers);
 
   // RUBBLE: write the file
   std::ofstream metafile;
