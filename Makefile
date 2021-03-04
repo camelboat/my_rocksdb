@@ -8509,3 +8509,469 @@ cmake_check_build_system:
 	$(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 
+prefetch_test: $(OBJ_DIR)/file/prefetch_test.o $(TEST_LIBRARY) $(LIBRARY)
+	$(AM_LINK)
+
+io_tracer_parser_test: $(OBJ_DIR)/tools/io_tracer_parser_test.o $(OBJ_DIR)/tools/io_tracer_parser_tool.o $(TEST_LIBRARY) $(LIBRARY)
+	$(AM_LINK)
+
+io_tracer_parser: $(OBJ_DIR)/tools/io_tracer_parser.o $(TOOLS_LIBRARY) $(LIBRARY)
+	$(AM_LINK)
+
+#-------------------------------------------------
+# make install related stuff
+PREFIX ?= /usr/local
+LIBDIR ?= $(PREFIX)/lib
+INSTALL_LIBDIR = $(DESTDIR)$(LIBDIR)
+
+uninstall:
+	rm -rf $(DESTDIR)$(PREFIX)/include/rocksdb \
+	  $(INSTALL_LIBDIR)/$(LIBRARY) \
+	  $(INSTALL_LIBDIR)/$(SHARED4) \
+	  $(INSTALL_LIBDIR)/$(SHARED3) \
+	  $(INSTALL_LIBDIR)/$(SHARED2) \
+	  $(INSTALL_LIBDIR)/$(SHARED1) \
+	  $(INSTALL_LIBDIR)/pkgconfig/rocksdb.pc
+
+install-headers: gen-pc
+	install -d $(INSTALL_LIBDIR)
+	install -d $(INSTALL_LIBDIR)/pkgconfig
+	for header_dir in `$(FIND) "include/rocksdb" -type d`; do \
+		install -d $(DESTDIR)/$(PREFIX)/$$header_dir; \
+	done
+	for header in `$(FIND) "include/rocksdb" -type f -name *.h`; do \
+		install -C -m 644 $$header $(DESTDIR)/$(PREFIX)/$$header; \
+	done
+	install -C -m 644 rocksdb.pc $(INSTALL_LIBDIR)/pkgconfig/rocksdb.pc
+
+install-static: install-headers $(LIBRARY)
+	install -d $(INSTALL_LIBDIR)
+	install -C -m 755 $(LIBRARY) $(INSTALL_LIBDIR)
+
+install-shared: install-headers $(SHARED4)
+	install -d $(INSTALL_LIBDIR)
+	install -C -m 755 $(SHARED4) $(INSTALL_LIBDIR)
+	ln -fs $(SHARED4) $(INSTALL_LIBDIR)/$(SHARED3)
+	ln -fs $(SHARED4) $(INSTALL_LIBDIR)/$(SHARED2)
+	ln -fs $(SHARED4) $(INSTALL_LIBDIR)/$(SHARED1)
+
+# install static by default + install shared if it exists
+install: install-static
+	[ -e $(SHARED4) ] && $(MAKE) install-shared || :
+
+# Generate the pkg-config file
+gen-pc:
+	-echo 'prefix=$(PREFIX)' > rocksdb.pc
+	-echo 'exec_prefix=$${prefix}' >> rocksdb.pc
+	-echo 'includedir=$${prefix}/include' >> rocksdb.pc
+	-echo 'libdir=$(LIBDIR)' >> rocksdb.pc
+	-echo '' >> rocksdb.pc
+	-echo 'Name: rocksdb' >> rocksdb.pc
+	-echo 'Description: An embeddable persistent key-value store for fast storage' >> rocksdb.pc
+	-echo Version: $(shell ./build_tools/version.sh full) >> rocksdb.pc
+	-echo 'Libs: -L$${libdir} $(EXEC_LDFLAGS) -lrocksdb' >> rocksdb.pc
+	-echo 'Libs.private: $(PLATFORM_LDFLAGS)' >> rocksdb.pc
+	-echo 'Cflags: -I$${includedir} $(PLATFORM_CXXFLAGS)' >> rocksdb.pc
+
+#-------------------------------------------------
+
+
+# ---------------------------------------------------------------------------
+# Jni stuff
+# ---------------------------------------------------------------------------
+
+JAVA_INCLUDE = -I$(JAVA_HOME)/include/ -I$(JAVA_HOME)/include/linux
+ifeq ($(PLATFORM), OS_SOLARIS)
+	ARCH := $(shell isainfo -b)
+else ifeq ($(PLATFORM), OS_OPENBSD)
+	ifneq (,$(filter amd64 ppc64 ppc64le arm64 aarch64 sparc64, $(MACHINE)))
+		ARCH := 64
+	else
+		ARCH := 32
+	endif
+else
+	ARCH := $(shell getconf LONG_BIT)
+endif
+
+ifeq ($(shell ldd /usr/bin/env 2>/dev/null | grep -q musl; echo $$?),0)
+        JNI_LIBC = musl
+# GNU LibC (or glibc) is so pervasive we can assume it is the default
+# else
+#        JNI_LIBC = glibc
+endif
+
+ifneq ($(origin JNI_LIBC), undefined)
+  JNI_LIBC_POSTFIX = -$(JNI_LIBC)
+endif
+
+ifneq (,$(filter ppc% arm64 aarch64 sparc64, $(MACHINE)))
+	ROCKSDBJNILIB = librocksdbjni-linux-$(MACHINE)$(JNI_LIBC_POSTFIX).so
+else
+	ROCKSDBJNILIB = librocksdbjni-linux$(ARCH)$(JNI_LIBC_POSTFIX).so
+endif
+ROCKSDB_JAVA_VERSION ?= $(ROCKSDB_MAJOR).$(ROCKSDB_MINOR).$(ROCKSDB_PATCH)
+ROCKSDB_JAR = rocksdbjni-$(ROCKSDB_JAVA_VERSION)-linux$(ARCH)$(JNI_LIBC_POSTFIX).jar
+ROCKSDB_JAR_ALL = rocksdbjni-$(ROCKSDB_JAVA_VERSION).jar
+ROCKSDB_JAVADOCS_JAR = rocksdbjni-$(ROCKSDB_JAVA_VERSION)-javadoc.jar
+ROCKSDB_SOURCES_JAR = rocksdbjni-$(ROCKSDB_JAVA_VERSION)-sources.jar
+SHA256_CMD = sha256sum
+
+ZLIB_VER ?= 1.2.11
+ZLIB_SHA256 ?= c3e5e9fdd5004dcb542feda5ee4f0ff0744628baf8ed2dd5d66f8ca1197cb1a1
+ZLIB_DOWNLOAD_BASE ?= http://zlib.net
+BZIP2_VER ?= 1.0.8
+BZIP2_SHA256 ?= ab5a03176ee106d3f0fa90e381da478ddae405918153cca248e682cd0c4a2269
+BZIP2_DOWNLOAD_BASE ?= https://sourceware.org/pub/bzip2
+SNAPPY_VER ?= 1.1.8
+SNAPPY_SHA256 ?= 16b677f07832a612b0836178db7f374e414f94657c138e6993cbfc5dcc58651f
+SNAPPY_DOWNLOAD_BASE ?= https://github.com/google/snappy/archive
+LZ4_VER ?= 1.9.2
+LZ4_SHA256 ?= 658ba6191fa44c92280d4aa2c271b0f4fbc0e34d249578dd05e50e76d0e5efcc
+LZ4_DOWNLOAD_BASE ?= https://github.com/lz4/lz4/archive
+ZSTD_VER ?= 1.4.5
+ZSTD_SHA256 ?= 734d1f565c42f691f8420c8d06783ad818060fc390dee43ae0a89f86d0a4f8c2
+ZSTD_DOWNLOAD_BASE ?= https://github.com/facebook/zstd/archive
+CURL_SSL_OPTS ?= --tlsv1
+
+ifeq ($(PLATFORM), OS_MACOSX)
+	ROCKSDBJNILIB = librocksdbjni-osx.jnilib
+	ROCKSDB_JAR = rocksdbjni-$(ROCKSDB_JAVA_VERSION)-osx.jar
+	SHA256_CMD = openssl sha256 -r
+ifneq ("$(wildcard $(JAVA_HOME)/include/darwin)","")
+	JAVA_INCLUDE = -I$(JAVA_HOME)/include -I $(JAVA_HOME)/include/darwin
+else
+	JAVA_INCLUDE = -I/System/Library/Frameworks/JavaVM.framework/Headers/
+endif
+endif
+ifeq ($(PLATFORM), OS_FREEBSD)
+	JAVA_INCLUDE = -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/freebsd
+	ROCKSDBJNILIB = librocksdbjni-freebsd$(ARCH).so
+	ROCKSDB_JAR = rocksdbjni-$(ROCKSDB_JAVA_VERSION)-freebsd$(ARCH).jar
+endif
+ifeq ($(PLATFORM), OS_SOLARIS)
+	ROCKSDBJNILIB = librocksdbjni-solaris$(ARCH).so
+	ROCKSDB_JAR = rocksdbjni-$(ROCKSDB_MAJOR).$(ROCKSDB_MINOR).$(ROCKSDB_PATCH)-solaris$(ARCH).jar
+	JAVA_INCLUDE = -I$(JAVA_HOME)/include/ -I$(JAVA_HOME)/include/solaris
+	SHA256_CMD = digest -a sha256
+endif
+ifeq ($(PLATFORM), OS_AIX)
+	JAVA_INCLUDE = -I$(JAVA_HOME)/include/ -I$(JAVA_HOME)/include/aix
+	ROCKSDBJNILIB = librocksdbjni-aix.so
+	EXTRACT_SOURCES = gunzip < TAR_GZ | tar xvf -
+	SNAPPY_MAKE_TARGET = libsnappy.la
+endif
+ifeq ($(PLATFORM), OS_OPENBSD)
+        JAVA_INCLUDE = -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/openbsd
+	ROCKSDBJNILIB = librocksdbjni-openbsd$(ARCH).so
+        ROCKSDB_JAR = rocksdbjni-$(ROCKSDB_JAVA_VERSION)-openbsd$(ARCH).jar
+endif
+
+libz.a:
+	-rm -rf zlib-$(ZLIB_VER)
+ifeq (,$(wildcard ./zlib-$(ZLIB_VER).tar.gz))
+	curl --fail --output zlib-$(ZLIB_VER).tar.gz --location ${ZLIB_DOWNLOAD_BASE}/zlib-$(ZLIB_VER).tar.gz
+endif
+	ZLIB_SHA256_ACTUAL=`$(SHA256_CMD) zlib-$(ZLIB_VER).tar.gz | cut -d ' ' -f 1`; \
+	if [ "$(ZLIB_SHA256)" != "$$ZLIB_SHA256_ACTUAL" ]; then \
+		echo zlib-$(ZLIB_VER).tar.gz checksum mismatch, expected=\"$(ZLIB_SHA256)\" actual=\"$$ZLIB_SHA256_ACTUAL\"; \
+		exit 1; \
+	fi
+	tar xvzf zlib-$(ZLIB_VER).tar.gz
+	cd zlib-$(ZLIB_VER) && CFLAGS='-fPIC ${EXTRA_CFLAGS}' LDFLAGS='${EXTRA_LDFLAGS}' ./configure --static && $(MAKE)
+	cp zlib-$(ZLIB_VER)/libz.a .
+
+libbz2.a:
+	-rm -rf bzip2-$(BZIP2_VER)
+ifeq (,$(wildcard ./bzip2-$(BZIP2_VER).tar.gz))
+	curl --fail --output bzip2-$(BZIP2_VER).tar.gz --location ${CURL_SSL_OPTS} ${BZIP2_DOWNLOAD_BASE}/bzip2-$(BZIP2_VER).tar.gz
+endif
+	BZIP2_SHA256_ACTUAL=`$(SHA256_CMD) bzip2-$(BZIP2_VER).tar.gz | cut -d ' ' -f 1`; \
+	if [ "$(BZIP2_SHA256)" != "$$BZIP2_SHA256_ACTUAL" ]; then \
+		echo bzip2-$(BZIP2_VER).tar.gz checksum mismatch, expected=\"$(BZIP2_SHA256)\" actual=\"$$BZIP2_SHA256_ACTUAL\"; \
+		exit 1; \
+	fi
+	tar xvzf bzip2-$(BZIP2_VER).tar.gz
+	cd bzip2-$(BZIP2_VER) && $(MAKE) CFLAGS='-fPIC -O2 -g -D_FILE_OFFSET_BITS=64 ${EXTRA_CFLAGS}' AR='ar ${EXTRA_ARFLAGS}'
+	cp bzip2-$(BZIP2_VER)/libbz2.a .
+
+libsnappy.a:
+	-rm -rf snappy-$(SNAPPY_VER)
+ifeq (,$(wildcard ./snappy-$(SNAPPY_VER).tar.gz))
+	curl --fail --output snappy-$(SNAPPY_VER).tar.gz --location ${CURL_SSL_OPTS} ${SNAPPY_DOWNLOAD_BASE}/$(SNAPPY_VER).tar.gz
+endif
+	SNAPPY_SHA256_ACTUAL=`$(SHA256_CMD) snappy-$(SNAPPY_VER).tar.gz | cut -d ' ' -f 1`; \
+	if [ "$(SNAPPY_SHA256)" != "$$SNAPPY_SHA256_ACTUAL" ]; then \
+		echo snappy-$(SNAPPY_VER).tar.gz checksum mismatch, expected=\"$(SNAPPY_SHA256)\" actual=\"$$SNAPPY_SHA256_ACTUAL\"; \
+		exit 1; \
+	fi
+	tar xvzf snappy-$(SNAPPY_VER).tar.gz
+	mkdir snappy-$(SNAPPY_VER)/build
+	cd snappy-$(SNAPPY_VER)/build && CFLAGS='${EXTRA_CFLAGS}' CXXFLAGS='${EXTRA_CXXFLAGS}' LDFLAGS='${EXTRA_LDFLAGS}' cmake -DCMAKE_POSITION_INDEPENDENT_CODE=ON .. && $(MAKE) ${SNAPPY_MAKE_TARGET}
+	cp snappy-$(SNAPPY_VER)/build/libsnappy.a .
+
+liblz4.a:
+	-rm -rf lz4-$(LZ4_VER)
+ifeq (,$(wildcard ./lz4-$(LZ4_VER).tar.gz))
+	curl --fail --output lz4-$(LZ4_VER).tar.gz --location ${CURL_SSL_OPTS} ${LZ4_DOWNLOAD_BASE}/v$(LZ4_VER).tar.gz
+endif
+	LZ4_SHA256_ACTUAL=`$(SHA256_CMD) lz4-$(LZ4_VER).tar.gz | cut -d ' ' -f 1`; \
+	if [ "$(LZ4_SHA256)" != "$$LZ4_SHA256_ACTUAL" ]; then \
+		echo lz4-$(LZ4_VER).tar.gz checksum mismatch, expected=\"$(LZ4_SHA256)\" actual=\"$$LZ4_SHA256_ACTUAL\"; \
+		exit 1; \
+	fi
+	tar xvzf lz4-$(LZ4_VER).tar.gz
+	cd lz4-$(LZ4_VER)/lib && $(MAKE) CFLAGS='-fPIC -O2 ${EXTRA_CFLAGS}' all
+	cp lz4-$(LZ4_VER)/lib/liblz4.a .
+
+libzstd.a:
+	-rm -rf zstd-$(ZSTD_VER)
+ifeq (,$(wildcard ./zstd-$(ZSTD_VER).tar.gz))
+	curl --fail --output zstd-$(ZSTD_VER).tar.gz --location ${CURL_SSL_OPTS} ${ZSTD_DOWNLOAD_BASE}/v$(ZSTD_VER).tar.gz
+endif
+	ZSTD_SHA256_ACTUAL=`$(SHA256_CMD) zstd-$(ZSTD_VER).tar.gz | cut -d ' ' -f 1`; \
+	if [ "$(ZSTD_SHA256)" != "$$ZSTD_SHA256_ACTUAL" ]; then \
+		echo zstd-$(ZSTD_VER).tar.gz checksum mismatch, expected=\"$(ZSTD_SHA256)\" actual=\"$$ZSTD_SHA256_ACTUAL\"; \
+		exit 1; \
+	fi
+	tar xvzf zstd-$(ZSTD_VER).tar.gz
+	cd zstd-$(ZSTD_VER)/lib && DESTDIR=. PREFIX= $(MAKE) CFLAGS='-fPIC -O2 ${EXTRA_CFLAGS}' install
+	cp zstd-$(ZSTD_VER)/lib/libzstd.a .
+
+# A version of each $(LIB_OBJECTS) compiled with -fPIC and a fixed set of static compression libraries
+ifneq ($(ROCKSDB_JAVA_NO_COMPRESSION), 1)
+JAVA_COMPRESSIONS = libz.a libbz2.a libsnappy.a liblz4.a libzstd.a
+endif
+
+JAVA_STATIC_FLAGS = -DZLIB -DBZIP2 -DSNAPPY -DLZ4 -DZSTD
+JAVA_STATIC_INCLUDES = -I./zlib-$(ZLIB_VER) -I./bzip2-$(BZIP2_VER) -I./snappy-$(SNAPPY_VER) -I./lz4-$(LZ4_VER)/lib -I./zstd-$(ZSTD_VER)/lib/include
+ifneq ($(findstring rocksdbjavastatic, $(MAKECMDGOALS)),)
+CXXFLAGS += $(JAVA_STATIC_FLAGS) $(JAVA_STATIC_INCLUDES)
+CFLAGS +=  $(JAVA_STATIC_FLAGS) $(JAVA_STATIC_INCLUDES)
+endif
+rocksdbjavastatic: $(LIB_OBJECTS) $(JAVA_COMPRESSIONS)
+	cd java;$(MAKE) javalib;
+	rm -f ./java/target/$(ROCKSDBJNILIB)
+	$(CXX) $(CXXFLAGS) -I./java/. $(JAVA_INCLUDE) -shared -fPIC \
+	  -o ./java/target/$(ROCKSDBJNILIB) $(JNI_NATIVE_SOURCES) \
+	  $(LIB_OBJECTS) $(COVERAGEFLAGS) \
+	  $(JAVA_COMPRESSIONS) $(JAVA_STATIC_LDFLAGS)
+	cd java/target;if [ "$(DEBUG_LEVEL)" == "0" ]; then \
+		strip $(STRIPFLAGS) $(ROCKSDBJNILIB); \
+	fi
+	cd java;jar -cf target/$(ROCKSDB_JAR) HISTORY*.md
+	cd java/target;jar -uf $(ROCKSDB_JAR) $(ROCKSDBJNILIB)
+	cd java/target/classes;jar -uf ../$(ROCKSDB_JAR) org/rocksdb/*.class org/rocksdb/util/*.class
+	cd java/target/apidocs;jar -cf ../$(ROCKSDB_JAVADOCS_JAR) *
+	cd java/src/main/java;jar -cf ../../../target/$(ROCKSDB_SOURCES_JAR) org
+	openssl sha1 java/target/$(ROCKSDB_JAR) | sed 's/.*= \([0-9a-f]*\)/\1/' > java/target/$(ROCKSDB_JAR).sha1
+	openssl sha1 java/target/$(ROCKSDB_JAVADOCS_JAR) | sed 's/.*= \([0-9a-f]*\)/\1/' > java/target/$(ROCKSDB_JAVADOCS_JAR).sha1
+	openssl sha1 java/target/$(ROCKSDB_SOURCES_JAR) | sed 's/.*= \([0-9a-f]*\)/\1/' > java/target/$(ROCKSDB_SOURCES_JAR).sha1
+
+rocksdbjavastaticrelease: rocksdbjavastatic
+	# cd java/crossbuild && (vagrant destroy -f || true) && vagrant up linux32 && vagrant halt linux32 && vagrant up linux64 && vagrant halt linux64 && vagrant up linux64-musl && vagrant halt linux64-musl
+	cd java;jar -cf target/$(ROCKSDB_JAR_ALL) HISTORY*.md
+	cd java/target;jar -uf $(ROCKSDB_JAR_ALL) librocksdbjni-*.so
+	cd java/target/classes;jar -uf ../$(ROCKSDB_JAR_ALL) org/rocksdb/*.class org/rocksdb/util/*.class
+	openssl sha1 java/target/$(ROCKSDB_JAR_ALL) | sed 's/.*= \([0-9a-f]*\)/\1/' > java/target/$(ROCKSDB_JAR_ALL).sha1
+
+rocksdbjavastaticreleasedocker: rocksdbjavastatic rocksdbjavastaticdockerx86 rocksdbjavastaticdockerx86_64 rocksdbjavastaticdockerx86musl rocksdbjavastaticdockerx86_64musl
+	cd java;jar -cf target/$(ROCKSDB_JAR_ALL) HISTORY*.md
+	cd java/target;jar -uf $(ROCKSDB_JAR_ALL) librocksdbjni-*.so librocksdbjni-*.jnilib
+	cd java/target/classes;jar -uf ../$(ROCKSDB_JAR_ALL) org/rocksdb/*.class org/rocksdb/util/*.class
+	openssl sha1 java/target/$(ROCKSDB_JAR_ALL) | sed 's/.*= \([0-9a-f]*\)/\1/' > java/target/$(ROCKSDB_JAR_ALL).sha1
+
+rocksdbjavastaticdockerx86:
+	mkdir -p java/target
+	docker run --rm --name rocksdb_linux_x86-be --attach stdin --attach stdout --attach stderr --volume $(HOME)/.m2:/root/.m2:ro --volume `pwd`:/rocksdb-host:ro --volume /rocksdb-local-build --volume `pwd`/java/target:/rocksdb-java-target --env DEBUG_LEVEL=$(DEBUG_LEVEL) evolvedbinary/rocksjava:centos6_x86-be /rocksdb-host/java/crossbuild/docker-build-linux-centos.sh
+
+rocksdbjavastaticdockerx86_64:
+	mkdir -p java/target
+	docker run --rm --name rocksdb_linux_x64-be --attach stdin --attach stdout --attach stderr --volume $(HOME)/.m2:/root/.m2:ro --volume `pwd`:/rocksdb-host:ro --volume /rocksdb-local-build --volume `pwd`/java/target:/rocksdb-java-target --env DEBUG_LEVEL=$(DEBUG_LEVEL) evolvedbinary/rocksjava:centos6_x64-be /rocksdb-host/java/crossbuild/docker-build-linux-centos.sh
+
+rocksdbjavastaticdockerppc64le:
+	mkdir -p java/target
+	docker run --rm --name rocksdb_linux_ppc64le-be --attach stdin --attach stdout --attach stderr --volume $(HOME)/.m2:/root/.m2:ro --volume `pwd`:/rocksdb-host:ro --volume /rocksdb-local-build --volume `pwd`/java/target:/rocksdb-java-target --env DEBUG_LEVEL=$(DEBUG_LEVEL) evolvedbinary/rocksjava:centos7_ppc64le-be /rocksdb-host/java/crossbuild/docker-build-linux-centos.sh
+
+rocksdbjavastaticdockerarm64v8:
+	mkdir -p java/target
+	docker run --rm --name rocksdb_linux_arm64v8-be --attach stdin --attach stdout --attach stderr --volume $(HOME)/.m2:/root/.m2:ro --volume `pwd`:/rocksdb-host:ro --volume /rocksdb-local-build --volume `pwd`/java/target:/rocksdb-java-target --env DEBUG_LEVEL=$(DEBUG_LEVEL) evolvedbinary/rocksjava:centos7_arm64v8-be /rocksdb-host/java/crossbuild/docker-build-linux-centos.sh
+
+rocksdbjavastaticdockerx86musl:
+	mkdir -p java/target
+	docker run --rm --name rocksdb_linux_x86-musl-be --attach stdin --attach stdout --attach stderr --volume $(HOME)/.m2:/root/.m2:ro --volume `pwd`:/rocksdb-host:ro --volume /rocksdb-local-build --volume `pwd`/java/target:/rocksdb-java-target --env DEBUG_LEVEL=$(DEBUG_LEVEL) evolvedbinary/rocksjava:alpine3_x86-be /rocksdb-host/java/crossbuild/docker-build-linux-centos.sh
+
+rocksdbjavastaticdockerx86_64musl:
+	mkdir -p java/target
+	docker run --rm --name rocksdb_linux_x64-musl-be --attach stdin --attach stdout --attach stderr --volume $(HOME)/.m2:/root/.m2:ro --volume `pwd`:/rocksdb-host:ro --volume /rocksdb-local-build --volume `pwd`/java/target:/rocksdb-java-target --env DEBUG_LEVEL=$(DEBUG_LEVEL) evolvedbinary/rocksjava:alpine3_x64-be /rocksdb-host/java/crossbuild/docker-build-linux-centos.sh
+
+rocksdbjavastaticdockerppc64lemusl:
+	mkdir -p java/target
+	docker run --rm --name rocksdb_linux_ppc64le-musl-be --attach stdin --attach stdout --attach stderr --volume $(HOME)/.m2:/root/.m2:ro --volume `pwd`:/rocksdb-host:ro --volume /rocksdb-local-build --volume `pwd`/java/target:/rocksdb-java-target --env DEBUG_LEVEL=$(DEBUG_LEVEL) evolvedbinary/rocksjava:alpine3_ppc64le-be /rocksdb-host/java/crossbuild/docker-build-linux-centos.sh
+
+rocksdbjavastaticdockerarm64v8musl:
+	mkdir -p java/target
+	docker run --rm --name rocksdb_linux_arm64v8-musl-be --attach stdin --attach stdout --attach stderr --volume $(HOME)/.m2:/root/.m2:ro --volume `pwd`:/rocksdb-host:ro --volume /rocksdb-local-build --volume `pwd`/java/target:/rocksdb-java-target --env DEBUG_LEVEL=$(DEBUG_LEVEL) evolvedbinary/rocksjava:alpine3_arm64v8-be /rocksdb-host/java/crossbuild/docker-build-linux-centos.sh
+
+rocksdbjavastaticpublish: rocksdbjavastaticrelease rocksdbjavastaticpublishcentral
+
+rocksdbjavastaticpublishdocker: rocksdbjavastaticreleasedocker rocksdbjavastaticpublishcentral
+
+rocksdbjavastaticpublishcentral: rocksdbjavageneratepom
+	mvn gpg:sign-and-deploy-file -Durl=https://oss.sonatype.org/service/local/staging/deploy/maven2/ -DrepositoryId=sonatype-nexus-staging -DpomFile=java/pom.xml -Dfile=java/target/rocksdbjni-$(ROCKSDB_JAVA_VERSION)-javadoc.jar -Dclassifier=javadoc
+	mvn gpg:sign-and-deploy-file -Durl=https://oss.sonatype.org/service/local/staging/deploy/maven2/ -DrepositoryId=sonatype-nexus-staging -DpomFile=java/pom.xml -Dfile=java/target/rocksdbjni-$(ROCKSDB_JAVA_VERSION)-sources.jar -Dclassifier=sources
+	mvn gpg:sign-and-deploy-file -Durl=https://oss.sonatype.org/service/local/staging/deploy/maven2/ -DrepositoryId=sonatype-nexus-staging -DpomFile=java/pom.xml -Dfile=java/target/rocksdbjni-$(ROCKSDB_JAVA_VERSION)-linux64.jar -Dclassifier=linux64
+	mvn gpg:sign-and-deploy-file -Durl=https://oss.sonatype.org/service/local/staging/deploy/maven2/ -DrepositoryId=sonatype-nexus-staging -DpomFile=java/pom.xml -Dfile=java/target/rocksdbjni-$(ROCKSDB_JAVA_VERSION)-linux32.jar -Dclassifier=linux32
+	mvn gpg:sign-and-deploy-file -Durl=https://oss.sonatype.org/service/local/staging/deploy/maven2/ -DrepositoryId=sonatype-nexus-staging -DpomFile=java/pom.xml -Dfile=java/target/rocksdbjni-$(ROCKSDB_JAVA_VERSION)-linux64-musl.jar -Dclassifier=linux64-musl
+	mvn gpg:sign-and-deploy-file -Durl=https://oss.sonatype.org/service/local/staging/deploy/maven2/ -DrepositoryId=sonatype-nexus-staging -DpomFile=java/pom.xml -Dfile=java/target/rocksdbjni-$(ROCKSDB_JAVA_VERSION)-linux32-musl.jar -Dclassifier=linux32-musl
+	mvn gpg:sign-and-deploy-file -Durl=https://oss.sonatype.org/service/local/staging/deploy/maven2/ -DrepositoryId=sonatype-nexus-staging -DpomFile=java/pom.xml -Dfile=java/target/rocksdbjni-$(ROCKSDB_JAVA_VERSION)-osx.jar -Dclassifier=osx
+	mvn gpg:sign-and-deploy-file -Durl=https://oss.sonatype.org/service/local/staging/deploy/maven2/ -DrepositoryId=sonatype-nexus-staging -DpomFile=java/pom.xml -Dfile=java/target/rocksdbjni-$(ROCKSDB_JAVA_VERSION)-win64.jar -Dclassifier=win64
+	mvn gpg:sign-and-deploy-file -Durl=https://oss.sonatype.org/service/local/staging/deploy/maven2/ -DrepositoryId=sonatype-nexus-staging -DpomFile=java/pom.xml -Dfile=java/target/rocksdbjni-$(ROCKSDB_JAVA_VERSION).jar
+
+rocksdbjavageneratepom:
+	cd java;cat pom.xml.template | sed 's/\$${ROCKSDB_JAVA_VERSION}/$(ROCKSDB_JAVA_VERSION)/' > pom.xml
+
+# A version of each $(LIBOBJECTS) compiled with -fPIC
+
+jl/%.o: %.cc
+	$(AM_V_CC)mkdir -p $(@D) && $(CXX) $(CXXFLAGS) -fPIC -c $< -o $@ $(COVERAGEFLAGS)
+
+rocksdbjava: $(LIB_OBJECTS)
+	$(AM_V_GEN)cd java;$(MAKE) javalib;
+	$(AM_V_at)rm -f ./java/target/$(ROCKSDBJNILIB)
+	$(AM_V_at)$(CXX) $(CXXFLAGS) -I./java/. $(JAVA_INCLUDE) -shared -fPIC -o ./java/target/$(ROCKSDBJNILIB) $(JNI_NATIVE_SOURCES) $(LIB_OBJECTS) $(JAVA_LDFLAGS) $(COVERAGEFLAGS)
+	$(AM_V_at)cd java;jar -cf target/$(ROCKSDB_JAR) HISTORY*.md
+	$(AM_V_at)cd java/target;jar -uf $(ROCKSDB_JAR) $(ROCKSDBJNILIB)
+	$(AM_V_at)cd java/target/classes;jar -uf ../$(ROCKSDB_JAR) org/rocksdb/*.class org/rocksdb/util/*.class
+	$(AM_V_at)openssl sha1 java/target/$(ROCKSDB_JAR) | sed 's/.*= \([0-9a-f]*\)/\1/' > java/target/$(ROCKSDB_JAR).sha1
+
+jclean:
+	cd java;$(MAKE) clean;
+
+jtest_compile: rocksdbjava
+	cd java;$(MAKE) java_test
+
+jtest_run:
+	cd java;$(MAKE) run_test
+
+jtest: rocksdbjava
+	cd java;$(MAKE) sample;$(MAKE) test;
+	$(PYTHON) tools/check_all_python.py # TODO peterd: find a better place for this check in CI targets
+
+jdb_bench:
+	cd java;$(MAKE) db_bench;
+
+commit_prereq: build_tools/rocksdb-lego-determinator \
+               build_tools/precommit_checker.py
+	J=$(J) build_tools/precommit_checker.py unit unit_481 clang_unit release release_481 clang_release tsan asan ubsan lite unit_non_shm
+	$(MAKE) clean && $(MAKE) jclean && $(MAKE) rocksdbjava;
+
+# ---------------------------------------------------------------------------
+#  	Platform-specific compilation
+# ---------------------------------------------------------------------------
+
+ifeq ($(PLATFORM), IOS)
+# For iOS, create universal object files to be used on both the simulator and
+# a device.
+XCODEROOT=$(shell xcode-select -print-path)
+PLATFORMSROOT=$(XCODEROOT)/Platforms
+SIMULATORROOT=$(PLATFORMSROOT)/iPhoneSimulator.platform/Developer
+DEVICEROOT=$(PLATFORMSROOT)/iPhoneOS.platform/Developer
+IOSVERSION=$(shell defaults read $(PLATFORMSROOT)/iPhoneOS.platform/version CFBundleShortVersionString)
+
+.cc.o:
+	mkdir -p ios-x86/$(dir $@)
+	$(CXX) $(CXXFLAGS) -isysroot $(SIMULATORROOT)/SDKs/iPhoneSimulator$(IOSVERSION).sdk -arch i686 -arch x86_64 -c $< -o ios-x86/$@
+	mkdir -p ios-arm/$(dir $@)
+	xcrun -sdk iphoneos $(CXX) $(CXXFLAGS) -isysroot $(DEVICEROOT)/SDKs/iPhoneOS$(IOSVERSION).sdk -arch armv6 -arch armv7 -arch armv7s -arch arm64 -c $< -o ios-arm/$@
+	lipo ios-x86/$@ ios-arm/$@ -create -output $@
+
+.c.o:
+	mkdir -p ios-x86/$(dir $@)
+	$(CC) $(CFLAGS) -isysroot $(SIMULATORROOT)/SDKs/iPhoneSimulator$(IOSVERSION).sdk -arch i686 -arch x86_64 -c $< -o ios-x86/$@
+	mkdir -p ios-arm/$(dir $@)
+	xcrun -sdk iphoneos $(CC) $(CFLAGS) -isysroot $(DEVICEROOT)/SDKs/iPhoneOS$(IOSVERSION).sdk -arch armv6 -arch armv7 -arch armv7s -arch arm64 -c $< -o ios-arm/$@
+	lipo ios-x86/$@ ios-arm/$@ -create -output $@
+
+else
+ifeq ($(HAVE_POWER8),1)
+$(OBJ_DIR)/util/crc32c_ppc.o: util/crc32c_ppc.c
+	$(AM_V_CC)$(CC) $(CFLAGS) -c $< -o $@
+
+$(OBJ_DIR)/util/crc32c_ppc_asm.o: util/crc32c_ppc_asm.S
+	$(AM_V_CC)$(CC) $(CFLAGS) -c $< -o $@
+endif
+$(OBJ_DIR)/%.o: %.cc
+	$(AM_V_CC)mkdir -p $(@D) && $(CXX) $(CXXFLAGS) -c $< -o $@ $(COVERAGEFLAGS)
+
+$(OBJ_DIR)/%.o: %.cpp
+	$(AM_V_CC)mkdir -p $(@D) && $(CXX) $(CXXFLAGS) -c $< -o $@ $(COVERAGEFLAGS)
+
+$(OBJ_DIR)/%.o: %.c
+	$(AM_V_CC)$(CC) $(CFLAGS) -c $< -o $@
+endif
+
+# ---------------------------------------------------------------------------
+#  	Source files dependencies detection
+# ---------------------------------------------------------------------------
+
+DEPFILES = $(patsubst %.cc, $(OBJ_DIR)/%.cc.d, $(ALL_SOURCES))
+DEPFILES+ = $(patsubst %.c, $(OBJ_DIR)/%.c.d, $(LIB_SOURCES_C) $(TEST_MAIN_SOURCES_C))
+ifeq ($(USE_FOLLY_DISTRIBUTED_MUTEX),1)
+  DEPFILES +=$(patsubst %.cpp, $(OBJ_DIR)/%.cpp.d, $(FOLLY_SOURCES))
+endif
+
+# Add proper dependency support so changing a .h file forces a .cc file to
+# rebuild.
+
+# The .d file indicates .cc file's dependencies on .h files. We generate such
+# dependency by g++'s -MM option, whose output is a make dependency rule.
+$(OBJ_DIR)/%.cc.d: %.cc
+	@mkdir -p $(@D) && $(CXX) $(CXXFLAGS) $(PLATFORM_SHARED_CFLAGS) \
+	  -MM -MT'$@' -MT'$(<:.cc=.o)' -MT'$(<:%.cc=$(OBJ_DIR)/%.o)' \
+          "$<" -o '$@'
+
+$(OBJ_DIR)/%.cpp.d: %.cpp
+	@mkdir -p $(@D) && $(CXX) $(CXXFLAGS) $(PLATFORM_SHARED_CFLAGS) \
+	  -MM -MT'$@' -MT'$(<:.cpp=.o)' -MT'$(<:%.cpp=$(OBJ_DIR)/%.o)' \
+          "$<" -o '$@'
+
+ifeq ($(HAVE_POWER8),1)
+DEPFILES_C = $(patsubst %.c, $(OBJ_DIR)/%.c.d, $(LIB_SOURCES_C))
+DEPFILES_ASM = $(patsubst %.S, $(OBJ_DIR)/%.S.d, $(LIB_SOURCES_ASM))
+
+$(OBJ_DIR)/%.c.d: %.c
+	@$(CXX) $(CXXFLAGS) $(PLATFORM_SHARED_CFLAGS) \
+	  -MM -MT'$@' -MT'$(<:.c=.o)' "$<" -o '$@'
+
+$(OBJ_DIR)/%.S.d: %.S
+	@$(CXX) $(CXXFLAGS) $(PLATFORM_SHARED_CFLAGS) \
+	  -MM -MT'$@' -MT'$(<:.S=.o)' "$<" -o '$@'
+
+$(DEPFILES_C): %.c.d
+
+$(DEPFILES_ASM): %.S.d
+depend: $(DEPFILES) $(DEPFILES_C) $(DEPFILES_ASM)
+else
+depend: $(DEPFILES)
+endif
+
+build_subset_tests: $(ROCKSDBTESTS_SUBSET)
+	$(AM_V_GEN)if [ -n "$${ROCKSDBTESTS_SUBSET_TESTS_TO_FILE}" ]; then echo "$(ROCKSDBTESTS_SUBSET)" > "$${ROCKSDBTESTS_SUBSET_TESTS_TO_FILE}"; else echo "$(ROCKSDBTESTS_SUBSET)"; fi
+
+# if the make goal is either "clean" or "format", we shouldn't
+# try to import the *.d files.
+# TODO(kailiu) The unfamiliarity of Make's conditions leads to the ugly
+# working solution.
+ifneq ($(MAKECMDGOALS),clean)
+ifneq ($(MAKECMDGOALS),format)
+ifneq ($(MAKECMDGOALS),jclean)
+ifneq ($(MAKECMDGOALS),jtest)
+ifneq ($(MAKECMDGOALS),package)
+ifneq ($(MAKECMDGOALS),analyze)
+-include $(DEPFILES)
+endif
+endif
+endif
+endif
+endif
+endif
