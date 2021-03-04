@@ -22,6 +22,7 @@
 #include "port/port.h"
 #include "rocksdb/slice.h"
 #include "util/coding_lean.h"
+#include <vector>
 
 // Some processors does not allow unaligned access to memory
 #if defined(__sparc)
@@ -415,5 +416,9 @@ inline void GetUnaligned(const T *memory, T *value) {
   *value = *memory;
 #endif
 }
+
+int ship_sst(std::vector<uint64_t> sst);
+
+int copy_sst(uint64_t from, uint64_t to);
 
 }  // namespace ROCKSDB_NAMESPACE

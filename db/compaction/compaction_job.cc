@@ -65,7 +65,6 @@
 #include "util/random.h"
 #include "util/stop_watch.h"
 #include "util/string_util.h"
-#include "util/shipper.h"
 
 namespace ROCKSDB_NAMESPACE {
 

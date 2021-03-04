@@ -46,7 +46,6 @@
 #include "util/coding.h"
 #include "util/mutexlock.h"
 #include "util/stop_watch.h"
-#include "util/shipper.h"
 
 namespace ROCKSDB_NAMESPACE {
 
@@ -460,6 +459,7 @@ Status FlushJob::WriteLevel0Table() {
     // RUBBLE: write compaction metadata file
     std::string filepath = "/mnt/sdb/archive_dbs/compaction_meta/"+std::to_string(job_context_->job_id);
     std::string comp_metadata_str = "w 0 "+std::to_string(meta_.fd.GetNumber());
+    printf("Number %lu Size %lu\n", meta_.fd.GetNumber(), meta_.fd.GetFileSize());
     std::vector<uint64_t> sst_numbers(1, meta_.fd.GetNumber());
     ship_sst(sst_numbers);
     std::ofstream metafile;
