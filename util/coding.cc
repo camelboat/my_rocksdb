@@ -111,6 +111,7 @@ int copy_sst(uint64_t from, uint64_t to) {
     perror("posix_memalign failed");
     exit(1);
   }
+  memset(buf, 0, BUF_SIZE);
  
 	char sst_from[128];
 	sprintf(sst_from, "%s%06lu.sst", primary_path, from);
@@ -169,8 +170,8 @@ int ship_sst(std::vector<uint64_t> sst) {
 		return -1; 
 	}
     
-  std::string message;
   std::string delim = " ";
+  std::string message = std::to_string(sst.size()) + delim;
   for (size_t i = 0; i < sst.size(); i++) {
     message += std::to_string(sst[i]) + delim;
   }
@@ -182,9 +183,8 @@ int ship_sst(std::vector<uint64_t> sst) {
 	}
 
   char *p = strtok(buffer, delim.c_str());
-	int i = 0;
-  while(p) {
-    copy_sst(sst[i++], strtoul(p, NULL, 0));		
+  for (size_t i = 0; i < sst.size(); i++) {
+    copy_sst(sst[i], strtoul(p, NULL, 0));		
     p = strtok(NULL, delim.c_str());
   }
 

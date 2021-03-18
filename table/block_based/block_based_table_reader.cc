@@ -589,6 +589,7 @@ Status BlockBasedTable::Open(
     TailPrefetchStats* tail_prefetch_stats,
     BlockCacheTracer* const block_cache_tracer,
     size_t max_file_size_for_l0_meta_pin) {
+  std::cout << "[Open] file_name " << file->file_name() << "\n";
   table_reader->reset();
 
   Status s;
@@ -609,6 +610,7 @@ Status BlockBasedTable::Open(
   const bool preload_all = !table_options.cache_index_and_filter_blocks;
 
   if (!ioptions.allow_mmap_reads) {
+    std::cout << "[Open] allow_mmap_reads\n";
     s = PrefetchTail(ro, file.get(), file_size, force_direct_prefetch,
                      tail_prefetch_stats, prefetch_all, preload_all,
                      &prefetch_buffer);
@@ -617,6 +619,7 @@ Status BlockBasedTable::Open(
       return s;
     }
   } else {
+    std::cout << "[Open] not allow_mmap_reads\n";
     // Should not prefetch for mmap mode.
     prefetch_buffer.reset(new FilePrefetchBuffer(
         nullptr, 0, 0, false /* enable */, true /* track_min_offset */));
