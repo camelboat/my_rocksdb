@@ -480,9 +480,9 @@ Status MemTableList::TryInstallMemtableFlushResults(
 
     //rubble
     // There is always only one version edit in the list?
-    assert(edit_list.size() == 1);
+    // assert(edit_list.size() == 1);
     // There is always 2 memtables get flushed in a flush job?
-    assert(batch_count == 2);
+    // assert(batch_count == 2);
     edit_list.back()->SetBatchCount(batch_count);
 
     // std::cout << " ---- batch count ( flush compeleted memtable ): " << batch_count << ",  edit list size : " << edit_list.size() << "------ \n";

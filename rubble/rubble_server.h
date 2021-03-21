@@ -4,6 +4,11 @@
 #include <iomanip>
 #include <string> 
 #include <memory>
+#include <ctime>
+#include <stdio.h> 
+#include <stdlib.h> 
+#include <time.h> 
+// #include <chrono>
 #include <nlohmann/json.hpp>
 #include <unordered_map>
 
@@ -42,10 +47,15 @@ using rubble::Op_OpType_Name;
 using json = nlohmann::json;
 using std::chrono::time_point;
 using std::chrono::high_resolution_clock;
+using std::chrono::system_clock;
 
 int g_thread_num = 16;
-int g_cq_num = 1;
+int g_cq_num = 8;
 int g_pool = 1;
+
+int first = 0;
+time_point<high_resolution_clock> start_cc;
+time_point<high_resolution_clock> hold_cc;
 
 std::unordered_map<std::thread::id, int> map;
 
@@ -553,17 +563,30 @@ class CallDataBidi : CallDataBase {
         // std::cout << "I'm at READ state ! \n";
         //Meaning client said it wants to end the stream either by a 'writedone' or 'finish' call.
         if (!ok) {
-            std::cout << "thread:" << map[std::this_thread::get_id()] << " tag:" << this << " CQ returned false." << std::endl;
+            // std::cout << "thread:" << map[std::this_thread::get_id()] << " tag:" << this << " CQ returned false." << std::endl;
             Status _st(StatusCode::OUT_OF_RANGE,"test error msg");
             // rw_.Write(reply_, (void*)this);
             rw_.Finish(_st,(void*)this);
             status_ = BidiStatus::DONE;
-            std::cout << "thread:" << map[std::this_thread::get_id()] << " tag:" << this << " after call Finish(), cancelled:" << this->ctx_.IsCancelled() << std::endl;
+            // std::cout << "thread:" << map[std::this_thread::get_id()] << " tag:" << this << " after call Finish(), cancelled:" << this->ctx_.IsCancelled() << std::endl;
             break;
         }
+        // std::cout << " READ " << std::endl;
+        /*
+        if (map[std::this_thread::get_id()] == 4) {
+           // std::cout << "here: " << first << " thread id: " << std::this_thread::get_id()<< std::endl;
+           hold_cc = high_resolution_clock::now();
+           if (first) {
+              auto microsecs = std::chrono::duration_cast<std::chrono::microseconds>(hold_cc - start_cc);
+              std::cout << "latency: " << microsecs.count() << " ns\n";
+           } else {
+             first = 1;
+             // std::cout << "again: " << first;
+           }
+           start_cc = hold_cc;
 
-        // std::cout << "thread:" << std::setw(2) << map[std::this_thread::get_id()] << " Received a new " << Op_OpType_Name(request_.type()) << " op witk key : " << request_.key() << std::endl;
-
+          // std::cout <<  "thread 4 " << "curr time: " << ctime(&my_time);
+        }*/
         // Handle a db operation
         HandleOp();
         /* chain replication */
@@ -588,8 +611,8 @@ class CallDataBidi : CallDataBase {
         break;
 
     case BidiStatus::WRITE:
-        std::cout << "I'm at WRITE state ! \n";
-        std::cout << "thread:" << map[std::this_thread::get_id()] << " tag:" << this << " Get For key : " << request_.key() << " , status : " << reply_.status() << std::endl;
+        // std::cout << "I'm at WRITE state ! \n";
+        // std::cout << "thread:" << map[std::this_thread::get_id()] << " tag:" << this << " Get For key : " << request_.key() << " , status : " << reply_.status() << std::endl;
         // For a get request, return a reply back to the client
         rw_.Read(&request_, (void*)this);
 
@@ -597,7 +620,7 @@ class CallDataBidi : CallDataBase {
         break;
 
     case BidiStatus::CONNECT:
-        std::cout << "thread:" << map[std::this_thread::get_id()] << " tag:" << this << " connected:" << std::endl;
+        // std::cout << "thread:" << map[std::this_thread::get_id()] << " tag:" << this << " connected:" << std::endl;
         // Spawn a new CallData instance to serve new clients while we process
         // the one for this CallData. The instance will deallocate itself as
         // part of its FINISH state.
@@ -609,13 +632,13 @@ class CallDataBidi : CallDataBase {
         break;
 
     case BidiStatus::DONE:
-        std::cout << "thread:" << std::this_thread::get_id() << " tag:" << this
-                << " Server done, cancelled:" << this->ctx_.IsCancelled() << std::endl;
+        // std::cout << "thread:" << std::this_thread::get_id() << " tag:" << this
+        //         << " Server done, cancelled:" << this->ctx_.IsCancelled() << std::endl;
         status_ = BidiStatus::FINISH;
         break;
 
     case BidiStatus::FINISH:
-        std::cout << "thread:" << map[std::this_thread::get_id()] <<  "tag:" << this << " Server finish, cancelled:" << this->ctx_.IsCancelled() << std::endl;
+        // std::cout << "thread:" << map[std::this_thread::get_id()] <<  "tag:" << this << " Server finish, cancelled:" << this->ctx_.IsCancelled() << std::endl;
         _wlock.unlock();
         delete this;
         break;
@@ -633,7 +656,7 @@ class CallDataBidi : CallDataBase {
       if(!op_counter_.load()){
         start_time_ = high_resolution_clock::now();
       }
-
+      // std::cout << "opcount: " << op_counter_.load() << std::endl;
       if(op_counter_.load() && op_counter_.load()%100000 == 0){
         end_time_ = high_resolution_clock::now();
         auto millisecs = std::chrono::duration_cast<std::chrono::milliseconds>(end_time_ - start_time_);
@@ -652,6 +675,7 @@ class CallDataBidi : CallDataBase {
         if(s_.ok()){
           reply_.set_ok(true);
           reply_.set_value(value);
+          // std::cout << "key: " << request_.key() << " value: " << value << std::endl;
         }else{
           reply_.set_ok(false);
         }
@@ -694,6 +718,9 @@ class CallDataBidi : CallDataBase {
   // Let's implement a tiny state machine with the following states.
   enum class BidiStatus { READ = 1, WRITE = 2, CONNECT = 3, DONE = 4, FINISH = 5 };
   BidiStatus status_;
+
+  time_t my_time = time(NULL); 
+  
 
   std::mutex   m_mutex;
 
