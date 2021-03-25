@@ -42,7 +42,9 @@ using rubble::SyncRequest;
 using rubble::SyncReply;
 using rubble::Op;
 using rubble::OpReply;
-using rubble::Op_OpType_Name;
+using rubble::SingleOp;
+using rubble::SingleOpReply;
+using rubble::SingleOp_OpType_Name;
 
 using json = nlohmann::json;
 using std::chrono::time_point;
@@ -398,43 +400,6 @@ class SyncServiceImpl final : public  RubbleKvStoreService::WithAsyncMethod_DoOp
     return rocksdb::Status::OK();
   }
 
-  // synchronous version of DoOp
-  // Status DoOp(ServerContext* context, 
-  //             ServerReaderWriter<OpReply, Op>* stream) override {
-  //     std::string value;
-  //     while ( stream->Read(&request_)){
-  //       switch (request_.type())
-  //       {
-  //       case Op::GET:
-  //         s_ = db_->Get(rocksdb::ReadOptions(), request_.key(), &value);
-  //         if(s_.ok()){
-  //           // find the value for the key
-  //           reply_.set_value(value);
-  //           reply_.set_ok(true);
-  //         }else {
-  //           reply_.set_ok(false);
-  //           reply_.set_status(s_.ToString());
-  //         }
-  //         // For a Get op, we return a reply back to the client
-  //         stream->Write(reply_);
-  //         break;
-  //       case Op::PUT:
-  //         s_ = db_->Put(rocksdb::WriteOptions(), request_.key(), request_.value());
-  //         // assert(is_rubble_);
-  //         if(!is_tail_){
-  //           forwarder_->SyncDoPut(std::pair<std::string, std::string>{request_.key(), request_.value()});
-  //         }else{
-  //           // TODO: tail node should be responsible for sending the true reply back to replicator
-  //         }
-  //         break;
-  //       default:
-  //       std::cerr << "Unsupported Operation \n";
-  //         break;
-  //       }
-  //     }
-  //     return Status::OK;
-  // }
-
   private:
 
     // a db op request we get from the client
@@ -572,21 +537,7 @@ class CallDataBidi : CallDataBase {
             break;
         }
         // std::cout << " READ " << std::endl;
-        /*
-        if (map[std::this_thread::get_id()] == 4) {
-           // std::cout << "here: " << first << " thread id: " << std::this_thread::get_id()<< std::endl;
-           hold_cc = high_resolution_clock::now();
-           if (first) {
-              auto microsecs = std::chrono::duration_cast<std::chrono::microseconds>(hold_cc - start_cc);
-              std::cout << "latency: " << microsecs.count() << " ns\n";
-           } else {
-             first = 1;
-             // std::cout << "again: " << first;
-           }
-           start_cc = hold_cc;
 
-          // std::cout <<  "thread 4 " << "curr time: " << ctime(&my_time);
-        }*/
         // Handle a db operation
         HandleOp();
         /* chain replication */
@@ -599,9 +550,10 @@ class CallDataBidi : CallDataBase {
           // TODO: send the true reply back to replicator
         }
 
-        if(request_.type() == Op::GET){
+        if(request_.ops_size() && request_.ops(0).type() == SingleOp::GET){
           // if it's a Get Op, should return reply back to the client
           // alarm_.Set(cq_, gpr_now(gpr_clock_type::GPR_CLOCK_REALTIME), this);
+          // std::cout << " replies size: " << reply_.replies_size() << std::endl; 
           rw_.Write(reply_, (void*)this); 
           status_ = BidiStatus::WRITE;
         }else {
@@ -665,48 +617,53 @@ class CallDataBidi : CallDataBase {
       }
       
       op_counter_++;
-      switch (request_.type())
-      {
-      case Op::GET:
-        s_ = db_->Get(rocksdb::ReadOptions(), request_.key(), &value);
-        reply_.set_key(request_.key());
-        reply_.set_type(OpReply::GET);
-        reply_.set_status(s_.ToString());
-        if(s_.ok()){
-          reply_.set_ok(true);
-          reply_.set_value(value);
-          // std::cout << "key: " << request_.key() << " value: " << value << std::endl;
-        }else{
-          reply_.set_ok(false);
+      reply_.clear_replies();
+      for(const SingleOp& srequest: request_.ops()) {
+        SingleOpReply* sreply_ = reply_.add_replies();
+        switch (srequest.type()){
+          case SingleOp::GET:
+            s_ = db_->Get(rocksdb::ReadOptions(), srequest.key(), &value);
+            sreply_->set_key(srequest.key());
+            sreply_->set_type(SingleOpReply::GET);
+            sreply_->set_status(s_.ToString());
+            if(s_.ok()){
+              sreply_->set_ok(true);
+              sreply_->set_value(value);
+              // std::cout << "key: " << srequest.key() << " value: " << value << std::endl;
+            }else{
+              sreply_->set_ok(false);
+            }
+            break;
+
+          case SingleOp::PUT:
+            s_ = db_->Put(rocksdb::WriteOptions(), srequest.key(), srequest.value());
+            assert(s_.ok());
+            // reply_.set_type(OpReply::PUT);
+            // if(s_.ok()){
+            //   std::cout << "Put : (" << request_.key() << " ," << request_.value() << ")\n"; 
+            //   reply_.set_ok(true);
+            // }else{
+            //   std::cout << "Put Failed : " << s_.ToString() << std::endl;
+            //   reply_.set_ok(false);
+            //   reply_.set_status(s_.ToString());
+            // }
+            break;
+
+          case SingleOp::DELETE:
+            //TODO
+            break;
+
+          case SingleOp::UPDATE:
+            //TODO
+            break;
+
+          default:
+            std::cerr << "Unsupported Operation \n";
+            break;
         }
-        break;
-
-      case Op::PUT:
-        s_ = db_->Put(rocksdb::WriteOptions(), request_.key(), request_.value());
-        assert(s_.ok());
-        // reply_.set_type(OpReply::PUT);
-        // if(s_.ok()){
-        //   std::cout << "Put : (" << request_.key() << " ," << request_.value() << ")\n"; 
-        //   reply_.set_ok(true);
-        // }else{
-        //   std::cout << "Put Failed : " << s_.ToString() << std::endl;
-        //   reply_.set_ok(false);
-        //   reply_.set_status(s_.ToString());
-        // }
-        break;
-
-      case Op::DELETE:
-        //TODO
-        break;
-
-      case Op::UPDATE:
-        //TODO
-        break;
-
-      default:
-        std::cerr << "Unsupported Operation \n";
-        break;
+            
       }
+
   }
   
   // alarm object to put a new task into the cq_
@@ -791,8 +748,9 @@ class ServerImpl final {
       // memory address of a CallDataUnary instance.
       // The return value of Next should always be checked. This return value
       // tells us whether there is any kind of event or cq_ is shutting down.
+      
       GPR_ASSERT(m_cq[cq_idx]->Next(&tag, &ok));
-
+      // std::cout << "thread:" << map[std::this_thread::get_id()] << "\n";
       CallDataBase* _p_ins = (CallDataBase*)tag;
       _p_ins->Proceed(ok);
     }
@@ -808,14 +766,16 @@ class ServerImpl final {
 
 void RunServer(rocksdb::DB* db, const std::string& server_addr, int thread_num = 1) {
   
+  std::cout << " thread_num" << thread_num << std::endl;
   SyncServiceImpl service(db);
   g_thread_num = thread_num;
+  std::cout << "g_thread_num " << g_thread_num  << " thread_num" << thread_num << std::endl;
   grpc::EnableDefaultHealthCheckService(true);
   grpc::reflection::InitProtoReflectionServerBuilderPlugin();
   // ServerBuilder builder;
 
   // builder.AddListeningPort(server_addr, grpc::InsecureServerCredentials());
-  std::cout << "Server listening on " << server_addr << std::endl;
+  std::cout << "Server listening on " << server_addr << "with " << g_thread_num << " threads " << std::endl;
   // builder.RegisterService(&service);
   ServerImpl server_impl(server_addr, db, &service);
   server_impl.Run();
