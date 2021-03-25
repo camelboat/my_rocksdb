@@ -13,8 +13,7 @@ int main(int argc, char** argv) {
   //server is running on localhost:50051
   const std::string server_address = "128.110.153.114:50051";
   rocksdb::DB* db = GetDBInstance("/tmp/rocksdb_vanila_test","/mnt/sdb/archive_dbs/vanila/sst_dir", "" ,"", false, false, true);
-  // std::cout << "thread_num: " << thread_num << std::endl;
-  RunServer(db, server_address, 16);
+  RunServer(db, server_address, thread_num);
   // RunServer(db, server_address, thread_num);
   return 0;
 }

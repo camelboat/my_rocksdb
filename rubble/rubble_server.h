@@ -766,16 +766,14 @@ class ServerImpl final {
 
 void RunServer(rocksdb::DB* db, const std::string& server_addr, int thread_num = 1) {
   
-  std::cout << " thread_num" << thread_num << std::endl;
   SyncServiceImpl service(db);
   g_thread_num = thread_num;
-  std::cout << "g_thread_num " << g_thread_num  << " thread_num" << thread_num << std::endl;
   grpc::EnableDefaultHealthCheckService(true);
   grpc::reflection::InitProtoReflectionServerBuilderPlugin();
   // ServerBuilder builder;
 
   // builder.AddListeningPort(server_addr, grpc::InsecureServerCredentials());
-  std::cout << "Server listening on " << server_addr << "with " << g_thread_num << " threads " << std::endl;
+  std::cout << "Server listening on " << server_addr << "with " << std::endl;
   // builder.RegisterService(&service);
   ServerImpl server_impl(server_addr, db, &service);
   server_impl.Run();

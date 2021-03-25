@@ -27,7 +27,9 @@ using grpc::CompletionQueue;
 using rubble::RubbleKvStoreService;
 using rubble::Op;
 using rubble::OpReply;
-using rubble::Op_OpType_Name;
+using rubble::SingleOp;
+using rubble::SingleOpReply;
+using rubble::SingleOp_OpType_Name;
 using std::chrono::duration_cast;
 using std::chrono::high_resolution_clock;
 
@@ -47,6 +49,7 @@ class KvStoreClient{
         : stub_(RubbleKvStoreService::NewStub(channel)) {
       grpc_thread_.reset(new std::thread(std::bind(&KvStoreClient::AsyncCompleteRpc, this)));
       // aysnc_do_op_thread_.reset(new std::thread(&KvStoreClient::AsyncDoOp, this));
+      // get the stream for async
       stream_ = stub_->AsyncDoOp(&context_, &cq_,
                                    reinterpret_cast<void*>(Type::CONNECT));
       
@@ -60,7 +63,9 @@ class KvStoreClient{
     }
 
   Status SyncDoOpDone(){
+    // signal that the writes have been done 
     sync_stream_->WritesDone();
+    // check if stream properly closed
     Status status = sync_stream_->Finish();
     if (!status.ok()) {
       std::cout << status.error_code() << ": " << status.error_message()
@@ -73,20 +78,27 @@ class KvStoreClient{
   // Requests each key in the vector and displays the key and its corresponding
   // value as a pair
   void SyncDoGets(const std::vector<std::string>& keys) {
+    // TODO: needs to setup batch size here
     auto start_time = high_resolution_clock::now();
+    Op request_batch;
     for(const auto& key:keys){
       // Keys we are sending to the server.
-      Op request;
-      request.set_key(key);
-      request.set_type(Op::GET);
-      sync_stream_->Write(request);
-      // Get the value for the sent key
-      OpReply response;
-      sync_stream_->Read(&response);
+      SingleOp* request = request_batch.add_ops();
+      request->set_key(key);
+      request->set_type(SingleOp::GET);
+      // request_batch.add_ops(request);
+    }
+    
+    sync_stream_->Write(request_batch);
+    // Get the value for the sent key
+    OpReply response_batch;
+    sync_stream_->Read(&response_batch);
+    for(const SingleOpReply& response: response_batch.replies()) {
       if(!response.ok()){
-        std::cout << "Get -> " << key << " ,Failed: " << response.status() << "\n";
+        // std::cout << "Get -> " << response.key() << " ,Failed: " << response.status() << "\n";
+        std::cout << "Get -> " << " ,Failed: " << response.status() << "\n";
       }else{
-        std::cout << "Get -> " << key << " ,returned val : " << response.value() << std::endl;
+        std::cout << "Get -> " << response.key() << " ,returned val : " << response.value() << std::endl;
       }
     }
     auto end_time = high_resolution_clock::now();
@@ -96,13 +108,16 @@ class KvStoreClient{
 
   void SyncDoPuts(const std::vector<std::pair<std::string, std::string>>& kvs){   
     auto start_time = high_resolution_clock::now();
+    Op request_batch;
     for(const auto& kv: kvs){
-      Op request;
-      request.set_key(kv.first);
-      request.set_value(kv.second);
-      request.set_type(Op::PUT);
-      sync_stream_->Write(request);
+      SingleOp* request = request_batch.add_ops();
+      request->set_key(kv.first);
+      request->set_value(kv.second);
+      request->set_type(SingleOp::PUT);
+      // request_batch.add_ops(request);
     }
+    sync_stream_->Write(request_batch);
+
     auto end_time = high_resolution_clock::now();
     auto millisecs = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
     std::cout << "send " << kvs.size()<< " put ops in " << millisecs.count() << " millisecs \n";
@@ -191,10 +206,12 @@ class KvStoreClient{
         // notification handlers for the specified read/write requests as they
         // are being processed by gRPC.
         stream_->Read(&reply_, reinterpret_cast<void*>(Type::READ));
-        if(reply_.ok()){
-          std::cout << "returned val for key " << reply_.key() << " : " << reply_.value() << std::endl;
-        }else{
-          std::cout << reply_.status() << std::endl;
+        for(const SingleOpReply& sreply : reply_.replies()) {
+          if(sreply.ok()){
+            std::cout << "returned val for key " << sreply.key() << " : " << sreply.value() << std::endl;
+          }else{
+            std::cout << sreply.status() << std::endl;
+          }
         }
     }
 
@@ -214,54 +231,62 @@ class KvStoreClient{
         switch (static_cast<Type>(reinterpret_cast<long>(got_tag))) {
           case Type::READ:
               // in this case, means we get a reply from the server, which is for a Get operation
-              if(reply_.ok()){
-                std::cout << "Get for key : " << reply_.key() << " , returned value : " << reply_.value() << std::endl;
-              }else{
-                std::cout << "Get for key : " << reply_.key() << " , returned status : " << reply_.status() << std::endl;
+              for (const SingleOpReply& sreply_: reply_.replies()) {
+                if(sreply_.ok()){
+                  std::cout << "Get for key : " << sreply_.key() << " , returned value : " << sreply_.value() << std::endl;
+                }else{
+                  std::cout << "Get for key : " << sreply_.key() << " , returned status : " << sreply_.status() << std::endl;
+                }
               }
               // notify that we're ready to process next request
               if(is_forwarder_){
                 ready_.store(true);
                 cv_ready_.notify_one();
               }else{
+                // removes the first element (that has just been processed)
                 requests_.pop_front();
                 AsyncDoOps();
               }
+              
               break;
           case Type::WRITE:
-              switch (request_.type())
+            // for(const SingleOp& srequest_: request_.ops()) {
+              // TODO: potentially error-prone, what if no element
+            if (!request_.ops_size()) {
+              switch (request_.ops(0).type())
               {
-              case Op::GET:
-                std::cout << "Get -> " << request_.key() << std::endl;
-                ReadReplyForGet();
-                // AysncDoOp() /* call Write here ? */
-                break;
-              case Op::PUT:
-                // std::cout << "Put -> (" << request_.key() << ", " << request_.value() << ")\n";
-                // received a tag on the cq, we can start a new Write
-                if(is_forwarder_){
-                  ready_.store(true);
-                  // std::cout << "[g] Notify\n";
-                  cv_ready_.notify_one();
-                  // ForwardOp();
-                }else{ //it's kvstore client 
-                //  std::cout << "[g] polled :" << request_.key()  << std::endl;
-                  requests_.pop_front();
-                  AsyncDoOps();
-                }
-                break;
+                case SingleOp::GET:
+                  std::cout << "Get -> " << request_.ops(0).key() << std::endl;
+                  ReadReplyForGet();
+                  // AysncDoOp() /* call Write here ? */
+                  break;
+                case SingleOp::PUT:
+                  // std::cout << "Put -> (" << request_.key() << ", " << request_.value() << ")\n";
+                  // received a tag on the cq, we can start a new Write
+                  if(is_forwarder_){
+                    ready_.store(true);
+                    // std::cout << "[g] Notify\n";
+                    cv_ready_.notify_one();
+                    // ForwardOp();
+                  }else{ //it's kvstore client 
+                  //  std::cout << "[g] polled :" << request_.key()  << std::endl;
+                    requests_.pop_front();
+                    AsyncDoOps();
+                  }
+                  break;
 
-              case Op::DELETE:
+                case SingleOp::DELETE:
+                  //TODO
+                  break;  
+
+                case SingleOp::UPDATE:
                 //TODO
-                break;  
+                  break;
 
-              case Op::UPDATE:
-               //TODO
-                break;
-
-              default:
-                break;
+                default:
+                  break;
               }
+            }
               break;
           case Type::CONNECT:
               // std::cout << "Server connected." << std::endl;
