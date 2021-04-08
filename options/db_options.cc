@@ -580,7 +580,11 @@ ImmutableDBOptions::ImmutableDBOptions(const DBOptions& options)
       max_bgerror_resume_count(options.max_bgerror_resume_count),
       bgerror_resume_retry_interval(options.bgerror_resume_retry_interval),
       allow_data_in_errors(options.allow_data_in_errors),
-      db_host_id(options.db_host_id) {
+      db_host_id(options.db_host_id),
+      // replication
+      is_primary(options.is_primary),
+      is_tail(options.is_tail),
+      target_address(options.target_address) {
 }
 
 void ImmutableDBOptions::Dump(Logger* log) const {

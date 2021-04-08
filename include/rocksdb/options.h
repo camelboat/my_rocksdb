@@ -1196,6 +1196,18 @@ struct DBOptions {
   //
   // Default: hostname
   std::string db_host_id = kHostnameForDbHostId;
+  // used when rubble mode is enabled
+  // Only the primary instance is doing flush and compaction
+  bool is_primary = false;
+
+  // nodes except tail are doing shipping sst files and doing Sync rpc call 
+  // to the downstream node in the chain
+  // tail node is responsible for sending the true reply back to the replicator 
+  bool is_tail = false;
+
+  // downstream's server address to an upstream node, all nodes have a target_address 
+  // example string : 10.10.1.2:50051
+  std::string target_address = "";
 };
 
 // Options to control the behavior of a database (passed to DB::Open)

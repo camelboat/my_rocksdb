@@ -93,6 +93,10 @@ struct ImmutableDBOptions {
   uint64_t bgerror_resume_retry_interval;
   bool allow_data_in_errors;
   std::string db_host_id;
+  // replication
+  bool is_primary;
+  bool is_tail;
+  std::string target_address;
 };
 
 struct MutableDBOptions {
