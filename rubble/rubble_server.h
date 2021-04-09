@@ -53,7 +53,7 @@ using std::chrono::time_point;
 using std::chrono::high_resolution_clock;
 
 int g_thread_num = 16;
-int g_cq_num = 8;
+int g_cq_num = 2;
 int g_pool = 1;
 
 std::unordered_map<std::thread::id, int> map;
@@ -76,13 +76,6 @@ class SyncServiceImpl final : public  RubbleKvStoreService::WithAsyncMethod_DoOp
        ioptions_(default_cf_->ioptions()),
        cf_options_(default_cf_->GetCurrentMutableCFOptions()),
        fs_(ioptions_->fs){
-        //  if(is_rubble_ && !is_head_){
-        //    ios_ = CreateSstPool();
-        //    if(!ios_.ok()){
-        //      std::cout << "allocate sst pool failed \n";
-        //      assert(false);
-        //    }
-        //  }
     };
 
     ~SyncServiceImpl() {
@@ -251,12 +244,12 @@ class CallDataBidi : CallDataBase {
         // std::cout << "I'm at READ state ! \n";
         //Meaning client said it wants to end the stream either by a 'writedone' or 'finish' call.
         if (!ok) {
-            std::cout << "thread:" << map[std::this_thread::get_id()] << " tag:" << this << " CQ returned false." << std::endl;
+            // std::cout << "thread:" << map[std::this_thread::get_id()] << " tag:" << this << " CQ returned false." << std::endl;
             Status _st(StatusCode::OUT_OF_RANGE,"test error msg");
             // rw_.Write(reply_, (void*)this);
             rw_.Finish(_st,(void*)this);
             status_ = BidiStatus::DONE;
-            std::cout << "thread:" << map[std::this_thread::get_id()] << " tag:" << this << " after call Finish(), cancelled:" << this->ctx_.IsCancelled() << std::endl;
+            // std::cout << "thread:" << map[std::this_thread::get_id()] << " tag:" << this << " after call Finish(), cancelled:" << this->ctx_.IsCancelled() << std::endl;
             break;
         }
 
@@ -275,7 +268,7 @@ class CallDataBidi : CallDataBase {
           // tail node should be responsible for sending the reply back to replicator
           // use the sync stream to write the reply back
           if (reply_client_ == nullptr) {
-            // std::cout << "init the reply client" << "\n";
+            std::cout << "init the reply client" << "\n";
             reply_client_ = std::make_shared<ReplyClient>(grpc::CreateChannel(
             db_options_->target_address, grpc::InsecureChannelCredentials()));
           }
@@ -309,13 +302,13 @@ class CallDataBidi : CallDataBase {
         break;
 
     case BidiStatus::DONE:
-        std::cout << "thread:" << std::this_thread::get_id() << " tag:" << this
-                << " Server done, cancelled:" << this->ctx_.IsCancelled() << std::endl;
+        // std::cout << "thread:" << std::this_thread::get_id() << " tag:" << this
+                // << " Server done, cancelled:" << this->ctx_.IsCancelled() << std::endl;
         status_ = BidiStatus::FINISH;
         break;
 
     case BidiStatus::FINISH:
-        std::cout << "thread:" << map[std::this_thread::get_id()] <<  "tag:" << this << " Server finish, cancelled:" << this->ctx_.IsCancelled() << std::endl;
+        // std::cout << "thread:" << map[std::this_thread::get_id()] <<  "tag:" << this << " Server finish, cancelled:" << this->ctx_.IsCancelled() << std::endl;
         _wlock.unlock();
         delete this;
         break;
@@ -345,16 +338,36 @@ class CallDataBidi : CallDataBase {
     assert(request_.ops_size() > 0);
     op_counter_ += request_.ops_size();
     SingleOpReply* reply;
+    long batch_time;
     reply_.clear_replies();
     // std::cout << "thread: " << map[std::this_thread::get_id()] << " counter: " << op_counter_ 
     //     <<  " first key in batch: " << request_.ops(0).key() << " size: " << request_.ops_size() << "\n";
     switch (request_.ops(0).type())
     {
       case SingleOp::GET:
+        // start_batch_ = high_resolution_clock::now();
+        // std::cout << "GET with batch size: " << request_.ops_size() << "\n";
         for(const auto& request: request_.ops()) {
+          opcount++;
           reply = reply_.add_replies();
           reply->set_id(request.id());
+          // start_put_ = high_resolution_clock::now();
           s_ = db_->Get(rocksdb::ReadOptions(), request.key(), &value);
+          // end_put_ = high_resolution_clock::now();
+          // putcounter_ += std::chrono::duration_cast<std::chrono::nanoseconds>(end_put_ - start_put_).count();
+          // if (opcount > 0 && opcount %10000 == 0) {
+          //   average_put += putcounter_ ;
+          //   std::cout << "thread:" << std::to_string(map[std::this_thread::get_id()]) << " opcount: " <<  std::to_string(opcount)
+          //     << " average get per 10k: " << putcounter_ *(1.0) / 10000 << " average put " << std::to_string(average_put) << "\n";
+          //   putcounter_ = 0;
+          // }
+          
+          // // hardcode target reached 
+          // if (opcount == (1000000/g_thread_num)) {
+          //   int average_ns = average_put /opcount;
+          //   std::cout <<  "[GET] thread:" << map[std::this_thread::get_id()] << " averages to -> " 
+          //     << std::to_string(average_ns) << "\n"; 
+          // }
           reply->set_key(request.key());
           reply->set_type(SingleOpReply::GET);
           reply->set_status(s_.ToString());
@@ -365,27 +378,42 @@ class CallDataBidi : CallDataBase {
             reply->set_ok(false);
           }
         }
+        // end_batch_ = high_resolution_clock::now();
+        // batch_time = std::chrono::duration_cast<std::chrono::nanoseconds>(end_batch_ - start_batch_).count();
+        // average_batch += batch_time;
+        // if (opcount > 0 && opcount %10000 == 0) {
+        //   std::cout << "[GET] opcount: " << std::to_string(opcount) << " average to time per op " 
+        //     << std::to_string(batch_time / request_.ops_size())   << " accumulative: " << std::to_string(average_batch) << "\n";
+        // }
+        // if (opcount == (1000000/g_thread_num)) {
+        //     std::cout <<  "[GET] thread:" << map[std::this_thread::get_id()] << " per batch averages to -> " 
+        //        << std::to_string(average_batch / opcount)  << "\n"; 
+        // }
         break;
       case SingleOp::PUT:
+        start_batch_ = high_resolution_clock::now();
         for(const auto& request: request_.ops()) {
-            opcount++;
+          opcount++;
           start_put_ = high_resolution_clock::now();
           s_ = db_->Put(rocksdb::WriteOptions(), request.key(), request.value());
           end_put_ = high_resolution_clock::now();
           putcounter_ += std::chrono::duration_cast<std::chrono::nanoseconds>(end_put_ - start_put_).count();
           if (opcount > 0 && opcount %10000 == 0) {
-            std::cout << "thread:" << map[std::this_thread::get_id()] << " opcount: " <<  opcount << "putcounter: " << putcounter_ *(1.0) / 10000 << "\n";
+            average_put += putcounter_ ;
+            std::cout << "thread:" << map[std::this_thread::get_id()] << " opcount: " <<  opcount 
+              << " average put per 10k: " << putcounter_ *(1.0) / 10000 << " average put " << average_put << "\n";
             putcounter_ = 0;
           }
-
-
-        //   if (op_counter_.load() && op_counter_.load()%10000 == 0) {
-        //     std::cout << "last put time difference:" << std::chrono::duration_cast<std::chrono::nanoseconds>(end_put_ - start_put_).count() << " nanoseconds" 
-        //       << "\n average in past 10000 " << putcounter_/10000.0 << std::endl;
-        //   }
+          
+          // hardcode target reached 
+          if (opcount == (1000000/g_thread_num)) {
+            int average_ns = average_put /opcount;
+            std::cout <<  "thread:" << map[std::this_thread::get_id()] << " averages to -> " 
+              << std::to_string(average_ns) << "\n"; 
+          }
         
           assert(s_.ok());
-        //   std::cout << "Put ok with key: " << request.key() << "\n";
+          // std::cout << "Put ok with key: " << request.key() << "\n";
           // return to replicator if tail
           if(db_options_->is_tail){
             reply = reply_.add_replies();
@@ -402,6 +430,17 @@ class CallDataBidi : CallDataBase {
             }
           }
         }
+        end_batch_ = high_resolution_clock::now();
+        batch_time = std::chrono::duration_cast<std::chrono::nanoseconds>(end_batch_ - start_batch_).count();
+        average_batch += batch_time;
+        if (opcount > 0 && opcount %10000 == 0) {
+          std::cout << "opcount: " << opcount << " average to time per op " << batch_time / request_.ops_size()  
+            << " accumulative: " << average_batch << "\n";
+        }
+        if (opcount == (1000000/g_thread_num)) {
+            std::cout <<  "thread:" << map[std::this_thread::get_id()] << " per batch averages to -> " 
+               << std::to_string(average_batch / opcount)  << "\n"; 
+          }
         break;
       case SingleOp::DELETE:
         //TODO
@@ -447,8 +486,12 @@ class CallDataBidi : CallDataBase {
   time_point<high_resolution_clock> end_time_;
   time_point<high_resolution_clock> start_put_;
   time_point<high_resolution_clock> end_put_;
-  int putcounter_{0};
-  int opcount{0};
+  time_point<high_resolution_clock> start_batch_;
+  time_point<high_resolution_clock> end_batch_;
+  long long  putcounter_{0};
+  long long average_batch{0};
+  long long opcount{0};
+  long long average_put{0};
 };
 
 class ServerImpl final {
