@@ -153,12 +153,8 @@ link_libraries("${ROCKSDB_DIR}/librocksdb.a")
 
 # Targets greeter_[async_](client|server)
 foreach(_target
-  # rocksdb_server
-  # primary_node
-  # secondary_node
+  primary_node
   tail_node
-  # kv_store_client
-  # replicator
   )
   add_executable(${_target} "${_target}.cc"
   )
