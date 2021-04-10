@@ -55,10 +55,10 @@ rocksdb::DB* GetDBInstance(const string& db_path, const string& sst_dir,
   
   rocksdb::ColumnFamilyOptions cf_options;
   cf_options.OptimizeLevelStyleCompaction();
-  cf_options.num_levels=5;
+  cf_options.num_levels=7;
 
   // L0 size 16MB
-  cf_options.max_bytes_for_level_base=256*1024*1024;
+  cf_options.max_bytes_for_level_base=512*1024*1024;  
   cf_options.compression=rocksdb::kNoCompression;
   // cf_options.compression_per_level=rocksdb::kNoCompression:kNoCompression:kNoCompression:kNoCompression:kNoCompression;
 
@@ -69,7 +69,7 @@ rocksdb::DB* GetDBInstance(const string& db_path, const string& sst_dir,
 //     // db_options.preallocated_sst_pool_size = db_options.db_paths.front().target_size / (((cf_options.write_buffer_size >> 20) + 1) << 20);
 //     db_options.preallocated_sst_pool_size = 100;
 //   }
-  const int kWriteBufferSize = 32*1024*1024;
+  const int kWriteBufferSize = 128*1024*1024;
   // memtable size set to 4MB
   cf_options.write_buffer_size=kWriteBufferSize;
   // sst file size 4MB

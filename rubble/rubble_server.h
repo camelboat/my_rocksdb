@@ -335,7 +335,10 @@ class CallDataBidi : CallDataBase {
     }
 
     // ASSUME that each batch is with the same type of operation
-    assert(request_.ops_size() > 0);
+    // assert(request_.ops_size() > 0);
+    if (request_.ops_size() < 1) {
+      std::cout << "request empty\n";
+    }
     op_counter_ += request_.ops_size();
     SingleOpReply* reply;
     long batch_time;
@@ -392,26 +395,29 @@ class CallDataBidi : CallDataBase {
         break;
       case SingleOp::PUT:
         start_batch_ = high_resolution_clock::now();
+        // std::cout << "PUT batch: " << request_.ops_size() << "\n";
         for(const auto& request: request_.ops()) {
           opcount++;
-          start_put_ = high_resolution_clock::now();
+          // start_put_ = high_resolution_clock::now();
           s_ = db_->Put(rocksdb::WriteOptions(), request.key(), request.value());
-          end_put_ = high_resolution_clock::now();
-          putcounter_ += std::chrono::duration_cast<std::chrono::nanoseconds>(end_put_ - start_put_).count();
-          if (opcount > 0 && opcount %10000 == 0) {
-            average_put += putcounter_ ;
-            std::cout << "thread:" << map[std::this_thread::get_id()] << " opcount: " <<  opcount 
-              << " average put per 10k: " << putcounter_ *(1.0) / 10000 << " average put " << average_put << "\n";
-            putcounter_ = 0;
-          }
+          // end_put_ = high_resolution_clock::now();
+          // putcounter_ += std::chrono::duration_cast<std::chrono::nanoseconds>(end_put_ - start_put_).count();
+          // if (opcount > 0 && opcount %10000 == 0) {
+          //   average_put += putcounter_ ;
+          //   std::cout << "thread:" << map[std::this_thread::get_id()] << " opcount: " <<  opcount 
+          //     << " average put per 10k: " << putcounter_ *(1.0) / 10000 << " average put " << average_put << "\n";
+          //   putcounter_ = 0;
+          // }
           
-          // hardcode target reached 
-          if (opcount == (1000000/g_thread_num)) {
-            int average_ns = average_put /opcount;
-            std::cout <<  "thread:" << map[std::this_thread::get_id()] << " averages to -> " 
-              << std::to_string(average_ns) << "\n"; 
+          // // hardcode target reached 
+          // if (opcount == (1000000/g_thread_num)) {
+          //   int average_ns = average_put /opcount;
+          //   std::cout <<  "thread:" << map[std::this_thread::get_id()] << " averages to -> " 
+          //     << std::to_string(average_ns) << "\n"; 
+          // }
+          if (!s_.ok()) {
+            std::cout << "this is the status: " << s_.ToString() << "\n";
           }
-        
           assert(s_.ok());
           // std::cout << "Put ok with key: " << request.key() << "\n";
           // return to replicator if tail
@@ -430,17 +436,17 @@ class CallDataBidi : CallDataBase {
             }
           }
         }
-        end_batch_ = high_resolution_clock::now();
-        batch_time = std::chrono::duration_cast<std::chrono::nanoseconds>(end_batch_ - start_batch_).count();
-        average_batch += batch_time;
-        if (opcount > 0 && opcount %10000 == 0) {
-          std::cout << "opcount: " << opcount << " average to time per op " << batch_time / request_.ops_size()  
-            << " accumulative: " << average_batch << "\n";
-        }
-        if (opcount == (1000000/g_thread_num)) {
-            std::cout <<  "thread:" << map[std::this_thread::get_id()] << " per batch averages to -> " 
-               << std::to_string(average_batch / opcount)  << "\n"; 
-          }
+        // end_batch_ = high_resolution_clock::now();
+        // batch_time = std::chrono::duration_cast<std::chrono::nanoseconds>(end_batch_ - start_batch_).count();
+        // average_batch += batch_time;
+        // if (opcount > 0 && opcount %10000 == 0) {
+        //   std::cout << "opcount: " << opcount << " average to time per op " << batch_time / request_.ops_size()  
+        //     << " accumulative: " << average_batch << "\n";
+        // }
+        // if (opcount == (1000000/g_thread_num)) {
+        //     std::cout <<  "thread:" << map[std::this_thread::get_id()] << " per batch averages to -> " 
+        //        << std::to_string(average_batch / opcount)  << "\n"; 
+        //   }
         break;
       case SingleOp::DELETE:
         //TODO
