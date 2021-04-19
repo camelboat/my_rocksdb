@@ -436,7 +436,7 @@ Status FlushJob::WriteLevel0Table() {
     db_mutex_->Lock();
   }
   base_->Unref();
-  std::cout << "[Flush Job] : " << job_context_->job_id  << "[New L0 File ] : " << meta_.fd.GetNumber() << std::endl;
+  std::cout << "Flush Job [" << job_context_->job_id << "], New L0 file : " << meta_.fd.GetNumber() << std::endl;
   // Note that if file_size is zero, the file has been deleted and
   // should not be added to the manifest.
   const bool has_output = meta_.fd.GetFileSize() > 0;

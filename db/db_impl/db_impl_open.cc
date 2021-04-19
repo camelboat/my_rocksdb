@@ -7,6 +7,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file. See the AUTHORS file for names of contributors.
 #include <cinttypes>
+#include <iostream>
 
 #include "db/builder.h"
 #include "db/db_impl/db_impl.h"
@@ -1463,9 +1464,10 @@ Status DB::Open(const DBOptions& db_options, const std::string& dbname,
   const bool kSeqPerBatch = true;
   const bool kBatchPerTxn = true;
   // ASH: changes to add db_paths
-  DBOptions temp_db_options = db_options;
-  temp_db_options.db_paths.push_back(rocksdb::DbPath("/mnt/sdb/sst_dir/sst_10", 10000000000));
-  return DBImpl::Open(temp_db_options, dbname, column_families, handles, dbptr,
+  if(!db_options.db_paths.empty()){
+    std::cout << "First db path : " << db_options.db_paths.front().path << std::endl;
+  }
+  return DBImpl::Open(db_options, dbname, column_families, handles, dbptr,
                       !kSeqPerBatch, kBatchPerTxn);
 }
 

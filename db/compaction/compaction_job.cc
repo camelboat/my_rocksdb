@@ -1510,12 +1510,12 @@ Status CompactionJob::InstallCompactionResults(
   compaction->AddInputDeletions(compact_->compaction->edit());
 
   // RUBBLE: write compaction metadata file
-  std::cout << " -------- Compaction Job : ["  << job_id_ << "] ----------" << std::endl;
+  std::cout << " -------- Compaction Job ["  << job_id_ << "] ----------" << std::endl;
   // Add compaction inputs
   compaction->AddInputDeletions(compact_->compaction->edit());
   for (unsigned int i=0; i < compact_->compaction->num_input_levels(); i++){
     for (auto f : *(compact_->compaction->inputs(i))){
-      std::cout << " [File Deletion] : " << f->fd.GetNumber() << std::endl;
+      std::cout << "[File Deleted] : " << f->fd.GetNumber() << std::endl;
     }
   }
 
