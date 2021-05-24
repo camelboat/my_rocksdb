@@ -2011,7 +2011,7 @@ gen-pc:
 # ---------------------------------------------------------------------------
 # Jni stuff
 # ---------------------------------------------------------------------------
-
+JAVA_HOME=/usr/lib/jvm/default-java
 JAVA_INCLUDE = -I$(JAVA_HOME)/include/ -I$(JAVA_HOME)/include/linux
 ifeq ($(PLATFORM), OS_SOLARIS)
 	ARCH := $(shell isainfo -b)
