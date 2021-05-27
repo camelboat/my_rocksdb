@@ -1508,6 +1508,7 @@ Status CompactionJob::InstallCompactionResults(
 
   // Add compaction inputs
   compaction->AddInputDeletions(compact_->compaction->edit());
+  assert(compaction->output_level() != 0);
 
   // RUBBLE: write compaction metadata file
   std::cout << " -------- Compaction Job ["  << job_id_ << "] ----------" << std::endl;
@@ -1522,7 +1523,9 @@ Status CompactionJob::InstallCompactionResults(
   for (const auto& sub_compact : compact_->sub_compact_states) {
     for (const auto& out : sub_compact.outputs) {
       compaction->edit()->AddFile(compaction->output_level(), out.meta);
-      std::cout << "[File Added] : " << out.meta.fd.GetNumber() << std::endl;
+      std::cout << "[File Added] : (l" << compaction->output_level() 
+                << ", " << out.meta.fd.GetNumber() 
+                << ", " << out.meta.fd.GetFileSize()  << ")" << std::endl;
      
     }
   }
